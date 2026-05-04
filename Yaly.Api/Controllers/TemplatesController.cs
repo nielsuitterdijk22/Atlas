@@ -1,5 +1,9 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Yaly.Api.Data;
+using Yaly.Api.Data.Entities;
 using Yaly.Api.Models;
 using Yaly.Api.Services;
 
@@ -13,6 +17,7 @@ public class TemplatesController : ControllerBase
     private readonly TemplateRenderer _renderer;
     private readonly GitLocalService _gitLocal;
     private readonly GitHubService _gitHub;
+    private readonly YalyDbContext _db;
     private readonly ILogger<TemplatesController> _logger;
 
     public TemplatesController(
@@ -20,12 +25,14 @@ public class TemplatesController : ControllerBase
         TemplateRenderer renderer,
         GitLocalService gitLocal,
         GitHubService gitHub,
+        YalyDbContext db,
         ILogger<TemplatesController> logger)
     {
         _catalog = catalog;
         _renderer = renderer;
         _gitLocal = gitLocal;
         _gitHub = gitHub;
+        _db = db;
         _logger = logger;
     }
 
@@ -56,15 +63,27 @@ public class TemplatesController : ControllerBase
             return NotFound(new { error = $"Template '{name}' not found" });
         }
 
+        var stopwatch = Stopwatch.StartNew();
         var (definition, basePath) = entry.Value;
         var spec = definition.Spec;
         var values = NormalizeValues(request.Values);
+        var log = new ExecutionLog
+        {
+            TemplateName = definition.Metadata.Name,
+            TemplateTitle = definition.Metadata.Title,
+            Status = "pending",
+            ExecutedAt = DateTime.UtcNow
+        };
 
         foreach (var input in spec.Inputs.Where(i => i.Required))
         {
             if (!values.TryGetValue(input.Id, out var value) || value is null)
             {
-                return BadRequest(new { error = $"Required field '{input.Id}' is missing" });
+                log.Status = "failed";
+                log.ErrorMessage = $"Required field '{input.Id}' is missing";
+                log.ValuesJson = JsonSerializer.Serialize(values);
+                await SaveExecutionLogAsync(log, stopwatch.Elapsed.TotalMilliseconds);
+                return BadRequest(new { error = log.ErrorMessage });
             }
         }
 
@@ -76,29 +95,90 @@ public class TemplatesController : ControllerBase
             }
         }
 
+        log.ValuesJson = JsonSerializer.Serialize(values);
+
+        var target = new TargetSpec
+        {
+            Type = spec.Output.Target.Type,
+            Repo = spec.Output.Target.Repo,
+            Branch = spec.Output.Target.Branch,
+            Path = spec.Output.Target.Path,
+            CommitMessage = spec.Output.Target.CommitMessage
+        };
+        var gitHubSpec = spec.Output.GitHub is null
+            ? null
+            : new GitHubSpec { TokenEnv = spec.Output.GitHub.TokenEnv };
+
+        if (!string.IsNullOrWhiteSpace(request.Preset))
+        {
+            var preset = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Name == request.Preset);
+            if (preset == null)
+            {
+                log.Status = "failed";
+                log.ErrorMessage = $"Preset '{request.Preset}' not found";
+                await SaveExecutionLogAsync(log, stopwatch.Elapsed.TotalMilliseconds);
+                return BadRequest(new { error = log.ErrorMessage });
+            }
+
+            target = new TargetSpec
+            {
+                Type = preset.Type,
+                Repo = preset.Repo,
+                Branch = preset.Branch,
+                Path = preset.Path,
+                CommitMessage = string.IsNullOrWhiteSpace(preset.CommitMessageTemplate)
+                    ? spec.Output.Target.CommitMessage
+                    : preset.CommitMessageTemplate
+            };
+            gitHubSpec = new GitHubSpec
+            {
+                TokenEnv = string.IsNullOrWhiteSpace(preset.GitHubTokenEnv)
+                    ? spec.Output.GitHub?.TokenEnv ?? "GITHUB_TOKEN"
+                    : preset.GitHubTokenEnv
+            };
+        }
+
         try
         {
+            log.OutputTarget = target.Type;
+            log.OutputRepo = _renderer.RenderString(target.Repo, values);
+
             var skeletonPath = Path.GetFullPath(Path.Combine(basePath, spec.Output.Template));
             var renderedFiles = _renderer.RenderTemplateFolder(skeletonPath, values);
 
-            IOutputService outputService = spec.Output.Target.Type.ToLowerInvariant() switch
+            IOutputService outputService = target.Type.ToLowerInvariant() switch
             {
                 "github" => _gitHub,
                 "local" => _gitLocal,
-                _ => throw new ArgumentException($"Unknown target type: {spec.Output.Target.Type}")
+                _ => throw new ArgumentException($"Unknown target type: {target.Type}")
             };
 
             var result = await outputService.CommitFiles(
                 renderedFiles,
-                spec.Output.Target,
+                target,
                 values,
-                spec.Output.GitHub);
+                gitHubSpec);
+
+            log.Status = result.Success ? "success" : "failed";
+            log.CommitSha = result.CommitSha;
+            log.CommitUrl = result.CommitUrl;
+            log.ErrorMessage = result.Success ? null : result.Message;
+            log.FilesCreated = result.FilesCreated;
+            await SaveExecutionLogAsync(log, stopwatch.Elapsed.TotalMilliseconds);
+
+            if (!result.Success)
+            {
+                return StatusCode(500, result);
+            }
 
             return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to execute template {Name}", name);
+            log.Status = "failed";
+            log.ErrorMessage = ex.Message;
+            await SaveExecutionLogAsync(log, stopwatch.Elapsed.TotalMilliseconds);
             return StatusCode(500, new ExecuteResult
             {
                 Success = false,
@@ -112,6 +192,13 @@ public class TemplatesController : ControllerBase
     {
         _catalog.LoadCatalog();
         return Ok(new { message = "Catalog reloaded" });
+    }
+
+    private async Task SaveExecutionLogAsync(ExecutionLog log, double durationMs)
+    {
+        log.DurationMs = durationMs;
+        _db.ExecutionLogs.Add(log);
+        await _db.SaveChangesAsync();
     }
 
     private static Dictionary<string, object> NormalizeValues(Dictionary<string, object> values)

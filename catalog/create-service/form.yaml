@@ -12,8 +12,14 @@ spec:
       title: Service Name
       type: string
       required: true
-      pattern: "^[a-z][a-z0-9-]*$"
+      pattern: '^[a-z][a-z0-9-]*$'
       description: Lowercase name with hyphens (e.g. my-service)
+    - id: version
+      title: Version
+      type: string
+      default: '0.1.0'
+      pattern: "^\\d+\\.\\d+\\.\\d+$"
+      description: Semantic version (e.g. 1.0.0)
     - id: language
       title: Language
       type: select
@@ -43,5 +49,5 @@ spec:
       repo: /tmp/yaly-output
       branch: main
       path: /
-      commitMessage: "feat: scaffold {{service_name}}"
+      commitMessage: 'feat: scaffold {{service_name}}'
     template: ./skeleton/

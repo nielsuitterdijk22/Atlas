@@ -35,6 +35,8 @@ async function request(url, options) {
     )
   }
 
+  if (res.status === 204) return null
+
   return res.json()
 }
 
@@ -51,5 +53,42 @@ export async function executeTemplate(name, values) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ values })
+  })
+}
+
+// --- Admin API ---
+
+export async function fetchExecutions(page = 1, pageSize = 20, filters = {}) {
+  const params = new URLSearchParams({ page, pageSize, ...filters })
+  return request(`${API_BASE}/admin/executions?${params}`)
+}
+
+export async function fetchExecution(id) {
+  return request(`${API_BASE}/admin/executions/${id}`)
+}
+
+export async function fetchPresets() {
+  return request(`${API_BASE}/admin/presets`)
+}
+
+export async function createPreset(preset) {
+  return request(`${API_BASE}/admin/presets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(preset)
+  })
+}
+
+export async function updatePreset(id, preset) {
+  return request(`${API_BASE}/admin/presets/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(preset)
+  })
+}
+
+export async function deletePreset(id) {
+  return request(`${API_BASE}/admin/presets/${id}`, {
+    method: 'DELETE',
   })
 }

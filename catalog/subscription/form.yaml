@@ -1,0 +1,46 @@
+apiVersion: yaly/v1
+kind: Template
+metadata:
+  name: create-subscription
+  title: Create a New Subscription
+  description: Scaffold a new subscription
+  icon: key
+spec:
+  owner: platform-team
+  inputs:
+    - id: name
+      title: Application Name
+      type: string
+      required: true
+      pattern: '^[a-z][a-z0-9-]*$'
+      description: Lowercase name with hyphens (e.g. my-application)
+    - id: cicd
+      title: Enable CI/CD
+      type: boolean
+      default: true
+    - id: budget
+      title: Budget
+      type: number
+      min: 0
+      default: 1000
+    - id: owner
+      title: Owner
+      type: string
+      default: platform-team
+    - id: network_size
+      title: Network Size
+      type: select
+      description: Choose the size of the network for this subscription (small /28, medium /24, large /16)
+      options:
+        - small
+        - medium
+        - large
+      default: medium
+  output:
+    target:
+      type: local
+      repo: /tmp/yaly-output
+      branch: main
+      path: /
+      commitMessage: 'feat: scaffold {{name}}'
+    template: ./skeleton/

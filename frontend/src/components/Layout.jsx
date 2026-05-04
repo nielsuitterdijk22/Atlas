@@ -14,6 +14,9 @@ export default function Layout({ children }) {
             </Link>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-500">Self-Service Portal</span>
+              <Link to="/admin" className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                Admin
+              </Link>
             </div>
           </div>
         </div>
