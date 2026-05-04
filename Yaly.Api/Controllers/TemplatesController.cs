@@ -109,13 +109,15 @@ public class TemplatesController : ControllerBase
             ? null
             : new GitHubSpec { TokenEnv = spec.Output.GitHub.TokenEnv };
 
-        if (!string.IsNullOrWhiteSpace(request.Preset))
+        // Resolve preset: API request overrides YAML, YAML overrides default target
+        var presetName = request.Preset ?? spec.Output.Preset;
+        if (!string.IsNullOrWhiteSpace(presetName))
         {
-            var preset = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Name == request.Preset);
+            var preset = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Name == presetName);
             if (preset == null)
             {
                 log.Status = "failed";
-                log.ErrorMessage = $"Preset '{request.Preset}' not found";
+                log.ErrorMessage = $"Preset '{presetName}' not found";
                 await SaveExecutionLogAsync(log, stopwatch.Elapsed.TotalMilliseconds);
                 return BadRequest(new { error = log.ErrorMessage });
             }

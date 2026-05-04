@@ -25,6 +25,7 @@ public class TemplateSpec
 
 public class OutputSpec
 {
+    public string? Preset { get; set; }
     public TargetSpec Target { get; set; } = new();
     public GitHubSpec? GitHub { get; set; }
     public string Template { get; set; } = "./skeleton/";
