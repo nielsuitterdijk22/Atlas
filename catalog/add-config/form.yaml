@@ -1,0 +1,45 @@
+apiVersion: yaly/v1
+kind: Template
+metadata:
+  name: add-config
+  title: Add Configuration File
+  description: Add a standardized configuration file to an existing repository.
+  icon: settings
+spec:
+  owner: platform-team
+  inputs:
+    - id: app_name
+      title: Application Name
+      type: string
+      required: true
+    - id: environment
+      title: Environment
+      type: select
+      options:
+        - development
+        - staging
+        - production
+      default: development
+    - id: log_level
+      title: Log Level
+      type: select
+      options:
+        - debug
+        - info
+        - warn
+        - error
+      default: info
+    - id: replicas
+      title: Replicas
+      type: number
+      min: 1
+      max: 10
+      default: 1
+  output:
+    target:
+      type: local
+      repo: /tmp/yaly-output
+      branch: main
+      path: /
+      commitMessage: "chore: add {{ environment }} config for {{ app_name }}"
+    template: ./skeleton/

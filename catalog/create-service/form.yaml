@@ -1,0 +1,47 @@
+apiVersion: yaly/v1
+kind: Template
+metadata:
+  name: create-service
+  title: Create a New Microservice
+  description: Scaffold a new microservice with a README, Dockerfile, and basic project structure.
+  icon: rocket
+spec:
+  owner: platform-team
+  inputs:
+    - id: service_name
+      title: Service Name
+      type: string
+      required: true
+      pattern: "^[a-z][a-z0-9-]*$"
+      description: Lowercase name with hyphens (e.g. my-service)
+    - id: language
+      title: Language
+      type: select
+      options:
+        - csharp
+        - go
+        - python
+        - node
+      default: csharp
+    - id: port
+      title: Port
+      type: number
+      min: 3000
+      max: 9999
+      default: 8080
+    - id: description
+      title: Description
+      type: multiline
+      description: A short description of what this service does
+    - id: enable_ci
+      title: Enable CI/CD
+      type: boolean
+      default: true
+  output:
+    target:
+      type: local
+      repo: /tmp/yaly-output
+      branch: main
+      path: /
+      commitMessage: "feat: scaffold {{service_name}}"
+    template: ./skeleton/
