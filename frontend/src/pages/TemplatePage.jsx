@@ -61,7 +61,7 @@ export default function TemplatePage() {
       const res = await executeTemplate(name, values)
       setResult(res)
     } catch (err) {
-      setResult({ success: false, message: err.message })
+      setResult({ success: false, message: err.detail || err.message })
     } finally {
       setSubmitting(false)
     }

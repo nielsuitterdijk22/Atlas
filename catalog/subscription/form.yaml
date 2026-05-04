@@ -22,6 +22,7 @@ spec:
       title: Budget
       type: number
       min: 0
+      max: 10000
       default: 1000
     - id: owner
       title: Owner
@@ -37,10 +38,5 @@ spec:
         - large
       default: medium
   output:
-    target:
-      type: local
-      repo: ./tmp/yaly-output
-      branch: main
-      path: /
-      commitMessage: 'feat: scaffold {{name}}'
+    preset: yaly-gh
     template: ./skeleton/

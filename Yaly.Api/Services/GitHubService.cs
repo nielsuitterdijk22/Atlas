@@ -25,8 +25,18 @@ public class GitHubService : IOutputService
         try
         {
             var tokenEnv = gitHubSpec?.TokenEnv ?? "GITHUB_TOKEN";
-            var token = Environment.GetEnvironmentVariable(tokenEnv)
-                ?? throw new InvalidOperationException($"Environment variable '{tokenEnv}' not set");
+            string token;
+            if (tokenEnv.StartsWith("ghp_") || tokenEnv.StartsWith("github_pat_") || tokenEnv.StartsWith("gho_"))
+            {
+                // User provided the token directly instead of an env var name — use it as-is
+                _logger.LogWarning("Token value provided directly in preset. Consider using an environment variable name instead.");
+                token = tokenEnv;
+            }
+            else
+            {
+                token = Environment.GetEnvironmentVariable(tokenEnv)
+                    ?? throw new InvalidOperationException($"Environment variable '{tokenEnv}' is not set. Set it with: export {tokenEnv}=ghp_your_token");
+            }
 
             var client = new GitHubClient(new ProductHeaderValue("Yaly"))
             {

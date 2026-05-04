@@ -187,7 +187,7 @@ export default function PresetsPage() {
 
             {form.type === 'github' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Token Env Variable</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Token — Environment Variable Name</label>
                 <input
                   type="text"
                   value={form.gitHubTokenEnv || ''}
@@ -195,6 +195,9 @@ export default function PresetsPage() {
                   placeholder="GITHUB_TOKEN"
                   className={inputClass}
                 />
+                <p className="mt-1 text-xs text-gray-400">
+                  Name of the environment variable containing your PAT (e.g. <code className="bg-gray-100 px-1 rounded">GITHUB_TOKEN</code>). Do not paste the token itself.
+                </p>
               </div>
             )}
 
