@@ -2,6 +2,22 @@ using Microsoft.EntityFrameworkCore;
 using Yaly.Api.Data;
 using Yaly.Api.Services;
 
+// Load .env file from repo root if it exists
+var envFile = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
+if (File.Exists(envFile))
+{
+    foreach (var line in File.ReadAllLines(envFile))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#')) continue;
+        var eqIndex = trimmed.IndexOf('=');
+        if (eqIndex <= 0) continue;
+        var key = trimmed[..eqIndex].Trim();
+        var value = trimmed[(eqIndex + 1)..].Trim().Trim('"').Trim('\'');
+        Environment.SetEnvironmentVariable(key, value);
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()

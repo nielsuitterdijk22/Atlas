@@ -19,3 +19,6 @@ Thumbs.db
 
 # Yaly output
 /tmp/yaly-output/
+
+# Secrets
+.env
