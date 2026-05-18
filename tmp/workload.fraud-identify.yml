@@ -1,0 +1,6 @@
+workload:
+    name: fraud-identify
+    cicd: true
+    budget: 5000
+    owner: nielsuitterdijk22
+    network_size: medium
