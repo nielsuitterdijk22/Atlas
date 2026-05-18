@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { fetchRequest } from '../api'
+import { fetchRequest, retryRequest } from '../api'
 import { useIsPlatformEngineer } from '../context/AuthContext'
 import ApprovalActions from '../components/ApprovalActions'
 import { Page, Spinner, ErrorState, StatusBadge } from '../components/ui'
@@ -22,7 +22,22 @@ export default function RequestDetailPage() {
   const [request, setRequest] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState(null)
   const timer = useRef(null)
+
+  const retry = async () => {
+    setRetrying(true)
+    setRetryError(null)
+    try {
+      await retryRequest(id)
+      load(true)
+    } catch (err) {
+      setRetryError(err.detail || err.message)
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   const load = (showSpinner) => {
     if (showSpinner) setLoading(true)
@@ -79,9 +94,19 @@ export default function RequestDetailPage() {
             </div>
           )}
 
-          {request.status === 'failed' && request.errorMessage && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-sm text-red-700">
-              {request.errorMessage}
+          {request.status === 'failed' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              {request.errorMessage && (
+                <div className="text-sm text-red-700">{request.errorMessage}</div>
+              )}
+              <button
+                onClick={retry}
+                disabled={retrying}
+                className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {retrying ? 'Retrying…' : 'Retry provisioning'}
+              </button>
+              {retryError && <div className="mt-2 text-sm text-red-700">{retryError}</div>}
             </div>
           )}
 

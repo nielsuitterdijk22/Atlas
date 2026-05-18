@@ -121,6 +121,10 @@ export function createRequest(body) {
   return jsonBody(`${API_BASE}/requests`, body)
 }
 
+export function retryRequest(id) {
+  return jsonBody(`${API_BASE}/requests/${id}/retry`, {})
+}
+
 export function approveRequest(id, reason) {
   return jsonBody(`${API_BASE}/requests/${id}/approve`, { reason })
 }

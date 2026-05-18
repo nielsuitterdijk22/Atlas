@@ -151,6 +151,31 @@ public class RequestsController : OrgControllerBase
         return request;
     }
 
+    [HttpPost("{id}/retry")]
+    public async Task<ActionResult<ProvisioningRequest>> Retry(Guid id)
+    {
+        var (acc, error) = await RequireOrgAsync();
+        if (error != null) return error;
+
+        var request = await _db.ProvisioningRequests.FirstOrDefaultAsync(r => r.Id == id && r.OrgId == acc.OrgId);
+        if (request == null) return NotFound();
+        if (request.Status != "failed")
+            return BadRequest(new { error = $"Only failed requests can be retried (status: {request.Status})" });
+
+        var entry = _catalog.Get(acc.OrgId, request.TemplateName);
+        if (entry == null)
+            return BadRequest(new { error = $"Template '{request.TemplateName}' no longer exists" });
+
+        request.Status = "provisioning";
+        request.ErrorMessage = null;
+        await _db.SaveChangesAsync();
+
+        var (definition, basePath) = entry.Value;
+        var values = DeserializeValues(request.ValuesJson);
+        await ProvisionAsync(request, definition, basePath, values);
+        return request;
+    }
+
     /// <summary>Runs provisioning for a request, updates its status, and registers a Service on success.</summary>
     private async Task ProvisionAsync(
         ProvisioningRequest request,
