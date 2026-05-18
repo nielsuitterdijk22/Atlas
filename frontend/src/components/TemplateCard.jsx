@@ -9,15 +9,17 @@ const icons = {
   cloud: '☁️',
   shield: '🛡️',
   globe: '🌐',
+  key: '🔑',
 }
 
 export default function TemplateCard({ template }) {
   const { metadata, spec } = template
   const icon = icons[metadata.icon] || icons.file
+  const needsApproval = spec.approvalRequired
 
   return (
     <Link
-      to={`/template/${metadata.name}`}
+      to={`/create/${metadata.name}`}
       className="group block bg-white rounded-xl border border-gray-200 p-6 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
     >
       <div className="flex items-start gap-4">
@@ -25,15 +27,22 @@ export default function TemplateCard({ template }) {
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
-            {metadata.title}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+              {metadata.title}
+            </h3>
+            {needsApproval && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                needs approval
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-gray-500 line-clamp-2">
             {metadata.description}
           </p>
           <div className="mt-3 flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-              {spec.owner}
+              {metadata.serviceType || 'Service'}
             </span>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
               {spec.inputs.length} {spec.inputs.length === 1 ? 'input' : 'inputs'}

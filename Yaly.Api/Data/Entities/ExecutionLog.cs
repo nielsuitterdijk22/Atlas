@@ -3,6 +3,7 @@ namespace Yaly.Api.Data.Entities;
 public class ExecutionLog
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid OrgId { get; set; }
     public string TemplateName { get; set; } = "";
     public string TemplateTitle { get; set; } = "";
     public string Status { get; set; } = "pending";

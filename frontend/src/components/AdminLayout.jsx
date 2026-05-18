@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, Navigate } from 'react-router-dom'
+import { useIsPlatformEngineer } from '../context/AuthContext'
 
 const navItems = [
   { path: '/admin/executions', label: 'Executions', icon: 'history' },
@@ -21,9 +22,13 @@ const icons = {
 
 export default function AdminLayout({ children }) {
   const location = useLocation()
+  const isPlatformEngineer = useIsPlatformEngineer()
+
+  // Admin is platform-engineer territory — developers get bounced home.
+  if (!isPlatformEngineer) return <Navigate to="/" replace />
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-screen flex-1">
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Administration</h2>
@@ -55,7 +60,7 @@ export default function AdminLayout({ children }) {
             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Catalog
+            Back to Home
           </Link>
         </div>
       </aside>

@@ -5,8 +5,10 @@ metadata:
   title: Add Configuration File
   description: Add a standardized configuration file to an existing repository.
   icon: settings
+  serviceType: Configuration
 spec:
   owner: platform-team
+  nameInput: app_name
   inputs:
     - id: app_name
       title: Application Name

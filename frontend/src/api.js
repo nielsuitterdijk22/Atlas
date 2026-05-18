@@ -1,3 +1,5 @@
+import { getActiveOrgId } from './context/AuthContext'
+
 const API_BASE = '/api'
 
 class ApiError extends Error {
@@ -8,10 +10,14 @@ class ApiError extends Error {
   }
 }
 
-async function request(url, options) {
+async function request(url, options = {}) {
+  const orgId = getActiveOrgId()
+  const headers = { ...(options.headers || {}) }
+  if (orgId) headers['X-Yaly-Org'] = orgId
+
   let res
   try {
-    res = await fetch(url, options)
+    res = await fetch(url, { ...options, credentials: 'include', headers })
   } catch (err) {
     throw new ApiError(
       'Could not reach the API server. Is the backend running?',
@@ -28,67 +34,124 @@ async function request(url, options) {
     } catch {
       detail = res.statusText
     }
-    throw new ApiError(
-      `Request failed (${res.status})`,
-      res.status,
-      detail
-    )
+    throw new ApiError(`Request failed (${res.status})`, res.status, detail)
   }
 
   if (res.status === 204) return null
-
   return res.json()
 }
 
-export async function fetchTemplates() {
-  return request(`${API_BASE}/templates`)
-}
-
-export async function fetchTemplate(name) {
-  return request(`${API_BASE}/templates/${name}`)
-}
-
-export async function executeTemplate(name, values) {
-  return request(`${API_BASE}/templates/${name}/execute`, {
-    method: 'POST',
+function jsonBody(url, body, method = 'POST') {
+  return request(url, {
+    method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values })
+    body: JSON.stringify(body),
   })
 }
 
-// --- Admin API ---
+// --- Auth & organizations ---
 
-export async function fetchExecutions(page = 1, pageSize = 20, filters = {}) {
+export function fetchOrganizations() {
+  return request(`${API_BASE}/orgs`)
+}
+
+export function fetchOrganization(id) {
+  return request(`${API_BASE}/orgs/${id}`)
+}
+
+export function createOrganization(name) {
+  return jsonBody(`${API_BASE}/orgs`, { name })
+}
+
+export function updateOrganization(id, body) {
+  return jsonBody(`${API_BASE}/orgs/${id}`, body, 'PUT')
+}
+
+export function inviteMember(orgId, gitHubLogin, role) {
+  return jsonBody(`${API_BASE}/orgs/${orgId}/members`, { gitHubLogin, role })
+}
+
+export function updateMember(orgId, membershipId, role) {
+  return jsonBody(`${API_BASE}/orgs/${orgId}/members/${membershipId}`, { role }, 'PUT')
+}
+
+export function removeMember(orgId, membershipId) {
+  return request(`${API_BASE}/orgs/${orgId}/members/${membershipId}`, { method: 'DELETE' })
+}
+
+export function syncCatalog(orgId) {
+  return jsonBody(`${API_BASE}/orgs/${orgId}/catalog/sync`, {})
+}
+
+// --- Templates ---
+
+export function fetchTemplates() {
+  return request(`${API_BASE}/templates`)
+}
+
+export function fetchTemplate(name) {
+  return request(`${API_BASE}/templates/${name}`)
+}
+
+// --- Services (catalog) ---
+
+export function fetchServices(filters = {}) {
+  const params = new URLSearchParams(Object.entries(filters).filter(([, v]) => v))
+  const qs = params.toString()
+  return request(`${API_BASE}/services${qs ? `?${qs}` : ''}`)
+}
+
+export function fetchService(id) {
+  return request(`${API_BASE}/services/${id}`)
+}
+
+// --- Requests ---
+
+export function fetchRequests(filters = {}) {
+  const params = new URLSearchParams(Object.entries(filters).filter(([, v]) => v))
+  const qs = params.toString()
+  return request(`${API_BASE}/requests${qs ? `?${qs}` : ''}`)
+}
+
+export function fetchRequest(id) {
+  return request(`${API_BASE}/requests/${id}`)
+}
+
+export function createRequest(body) {
+  return jsonBody(`${API_BASE}/requests`, body)
+}
+
+export function approveRequest(id, reason) {
+  return jsonBody(`${API_BASE}/requests/${id}/approve`, { reason })
+}
+
+export function rejectRequest(id, reason) {
+  return jsonBody(`${API_BASE}/requests/${id}/reject`, { reason })
+}
+
+// --- Admin ---
+
+export function fetchExecutions(page = 1, pageSize = 20, filters = {}) {
   const params = new URLSearchParams({ page, pageSize, ...filters })
   return request(`${API_BASE}/admin/executions?${params}`)
 }
 
-export async function fetchExecution(id) {
+export function fetchExecution(id) {
   return request(`${API_BASE}/admin/executions/${id}`)
 }
 
-export async function fetchPresets() {
+export function fetchPresets() {
   return request(`${API_BASE}/admin/presets`)
 }
 
-export async function createPreset(preset) {
-  return request(`${API_BASE}/admin/presets`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(preset)
-  })
+export function createPreset(preset) {
+  return jsonBody(`${API_BASE}/admin/presets`, preset)
 }
 
-export async function updatePreset(id, preset) {
-  return request(`${API_BASE}/admin/presets/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(preset)
-  })
+export function updatePreset(id, preset) {
+  return jsonBody(`${API_BASE}/admin/presets/${id}`, preset, 'PUT')
 }
 
-export async function deletePreset(id) {
-  return request(`${API_BASE}/admin/presets/${id}`, {
-    method: 'DELETE',
-  })
+export function deletePreset(id) {
+  return request(`${API_BASE}/admin/presets/${id}`, { method: 'DELETE' })
 }

@@ -14,6 +14,9 @@ public class TemplateMetadata
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
     public string Icon { get; set; } = "file";
+
+    /// <summary>Label shown for services created from this template (e.g. "Microservice").</summary>
+    public string ServiceType { get; set; } = "Service";
 }
 
 public class TemplateSpec
@@ -21,6 +24,13 @@ public class TemplateSpec
     public string Owner { get; set; } = "";
     public List<TemplateInput> Inputs { get; set; } = new();
     public OutputSpec Output { get; set; } = new();
+
+    /// <summary>When true, requests from this template queue for platform-team approval.</summary>
+    public bool ApprovalRequired { get; set; }
+
+    /// <summary>Id of the input used as the service name. When unset, falls back to
+    /// an input id of "name", then "service_name", then the first required string input.</summary>
+    public string? NameInput { get; set; }
 }
 
 public class OutputSpec

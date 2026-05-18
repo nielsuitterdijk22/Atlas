@@ -20,5 +20,11 @@ Thumbs.db
 # Yaly output
 /tmp/yaly-output/
 
+# Per-org catalog clones (runtime cache)
+catalog-cache/
+
+# Data Protection keys (encrypt catalog tokens)
+data-protection-keys/
+
 # Secrets
 .env

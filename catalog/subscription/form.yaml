@@ -5,8 +5,11 @@ metadata:
   title: Create a New Subscription
   description: Scaffold a new subscription
   icon: key
+  serviceType: Subscription
 spec:
   owner: platform-team
+  nameInput: name
+  approvalRequired: true
   inputs:
     - id: name
       title: Application Name

@@ -5,8 +5,10 @@ metadata:
   title: Create a New Microservice
   description: Scaffold a new microservice with a README, Dockerfile, and basic project structure.
   icon: rocket
+  serviceType: Microservice
 spec:
   owner: platform-team
+  nameInput: service_name
   inputs:
     - id: service_name
       title: Service Name

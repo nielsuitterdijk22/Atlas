@@ -4,41 +4,76 @@ using Yaly.Api.Models;
 
 namespace Yaly.Api.Services;
 
-public class CatalogService : IDisposable
+/// <summary>
+/// Loads templates per organization from <c>catalog-cache/&lt;orgId&gt;/</c>, which is
+/// populated by <see cref="CatalogSyncService"/> from the org's catalog Git repo.
+/// </summary>
+public class CatalogService
 {
-    private readonly string _catalogPath;
+    private readonly string _cacheRoot;
     private readonly ILogger<CatalogService> _logger;
     private readonly IDeserializer _deserializer;
     private readonly object _sync = new();
-    private Dictionary<string, (TemplateDefinition Definition, string BasePath)> _templates = new();
-    private FileSystemWatcher? _watcher;
+    private readonly Dictionary<Guid, Dictionary<string, (TemplateDefinition Definition, string BasePath)>> _byOrg = new();
 
     public CatalogService(IConfiguration config, ILogger<CatalogService> logger)
     {
-        _catalogPath = config.GetValue<string>("Catalog:Path") ?? Path.Combine(Directory.GetCurrentDirectory(), "..", "catalog");
+        _cacheRoot = config.GetValue<string>("Catalog:CachePath")
+            ?? Path.Combine(Directory.GetCurrentDirectory(), "..", "catalog-cache");
         _logger = logger;
         _deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .Build();
-
-        LoadCatalog();
-        ConfigureWatcher();
     }
 
-    public void LoadCatalog()
+    /// <summary>Local directory holding an org's cloned catalog.</summary>
+    public string OrgCachePath(Guid orgId) => Path.GetFullPath(Path.Combine(_cacheRoot, orgId.ToString()));
+
+    public List<TemplateDefinition> GetAll(Guid orgId)
     {
-        var templates = new Dictionary<string, (TemplateDefinition, string)>();
-        var catalogDir = Path.GetFullPath(_catalogPath);
+        lock (_sync)
+        {
+            return EnsureLoaded(orgId).Values.Select(t => t.Definition).ToList();
+        }
+    }
+
+    public (TemplateDefinition Definition, string BasePath)? Get(Guid orgId, string name)
+    {
+        lock (_sync)
+        {
+            return EnsureLoaded(orgId).TryGetValue(name, out var template) ? template : null;
+        }
+    }
+
+    /// <summary>Discards the cached templates for an org so the next access re-reads disk.</summary>
+    public void Reload(Guid orgId)
+    {
+        lock (_sync)
+        {
+            _byOrg[orgId] = LoadFromDisk(orgId);
+        }
+    }
+
+    private Dictionary<string, (TemplateDefinition Definition, string BasePath)> EnsureLoaded(Guid orgId)
+    {
+        if (!_byOrg.TryGetValue(orgId, out var templates))
+        {
+            templates = LoadFromDisk(orgId);
+            _byOrg[orgId] = templates;
+        }
+        return templates;
+    }
+
+    private Dictionary<string, (TemplateDefinition Definition, string BasePath)> LoadFromDisk(Guid orgId)
+    {
+        var templates = new Dictionary<string, (TemplateDefinition Definition, string BasePath)>();
+        var catalogDir = OrgCachePath(orgId);
 
         if (!Directory.Exists(catalogDir))
         {
-            _logger.LogWarning("Catalog directory not found: {Path}", catalogDir);
-            lock (_sync)
-            {
-                _templates = templates;
-            }
-            return;
+            _logger.LogInformation("No catalog cache for org {OrgId} yet", orgId);
+            return templates;
         }
 
         foreach (var formFile in Directory.GetFiles(catalogDir, "form.yaml", SearchOption.AllDirectories))
@@ -49,7 +84,6 @@ public class CatalogService : IDisposable
                 var definition = _deserializer.Deserialize<TemplateDefinition>(yaml);
                 var basePath = Path.GetDirectoryName(formFile)!;
                 templates[definition.Metadata.Name] = (definition, basePath);
-                _logger.LogInformation("Loaded template: {Name}", definition.Metadata.Name);
             }
             catch (Exception ex)
             {
@@ -57,104 +91,7 @@ public class CatalogService : IDisposable
             }
         }
 
-        lock (_sync)
-        {
-            _templates = templates;
-        }
-
-        _logger.LogInformation("Loaded {Count} templates from catalog", templates.Count);
-    }
-
-    public List<TemplateDefinition> GetAll()
-    {
-        lock (_sync)
-        {
-            return _templates.Values.Select(t => t.Definition).ToList();
-        }
-    }
-
-    public (TemplateDefinition Definition, string BasePath)? Get(string name)
-    {
-        lock (_sync)
-        {
-            return _templates.TryGetValue(name, out var template) ? template : null;
-        }
-    }
-
-    private void ConfigureWatcher()
-    {
-        var catalogDir = Path.GetFullPath(_catalogPath);
-        var parentDir = Directory.Exists(catalogDir)
-            ? catalogDir
-            : Path.GetDirectoryName(catalogDir);
-
-        if (string.IsNullOrWhiteSpace(parentDir) || !Directory.Exists(parentDir))
-        {
-            _logger.LogWarning("Catalog watcher not started because directory does not exist: {Path}", catalogDir);
-            return;
-        }
-
-        _watcher = new FileSystemWatcher(parentDir)
-        {
-            IncludeSubdirectories = true,
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
-            Filter = "*.yaml",
-            EnableRaisingEvents = true
-        };
-
-        _watcher.Changed += OnCatalogChanged;
-        _watcher.Created += OnCatalogChanged;
-        _watcher.Deleted += OnCatalogChanged;
-        _watcher.Renamed += OnCatalogRenamed;
-    }
-
-    private void OnCatalogChanged(object sender, FileSystemEventArgs e)
-    {
-        if (!IsCatalogFile(e.FullPath))
-        {
-            return;
-        }
-
-        ReloadWithLogging(e.ChangeType.ToString(), e.FullPath);
-    }
-
-    private void OnCatalogRenamed(object sender, RenamedEventArgs e)
-    {
-        if (!IsCatalogFile(e.FullPath) && !IsCatalogFile(e.OldFullPath))
-        {
-            return;
-        }
-
-        ReloadWithLogging("Renamed", e.FullPath);
-    }
-
-    private bool IsCatalogFile(string fullPath)
-        => string.Equals(Path.GetFileName(fullPath), "form.yaml", StringComparison.OrdinalIgnoreCase);
-
-    private void ReloadWithLogging(string reason, string path)
-    {
-        try
-        {
-            _logger.LogInformation("Catalog change detected ({Reason}) at {Path}; reloading", reason, path);
-            LoadCatalog();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to reload catalog after change to {Path}", path);
-        }
-    }
-
-    public void Dispose()
-    {
-        if (_watcher is null)
-        {
-            return;
-        }
-
-        _watcher.Changed -= OnCatalogChanged;
-        _watcher.Created -= OnCatalogChanged;
-        _watcher.Deleted -= OnCatalogChanged;
-        _watcher.Renamed -= OnCatalogRenamed;
-        _watcher.Dispose();
+        _logger.LogInformation("Loaded {Count} templates for org {OrgId}", templates.Count, orgId);
+        return templates;
     }
 }

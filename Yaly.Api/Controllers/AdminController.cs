@@ -2,16 +2,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Yaly.Api.Data;
 using Yaly.Api.Data.Entities;
+using Yaly.Api.Services;
 
 namespace Yaly.Api.Controllers;
 
 [ApiController]
 [Route("api/admin")]
-public class AdminController : ControllerBase
+public class AdminController : OrgControllerBase
 {
     private readonly YalyDbContext _db;
 
-    public AdminController(YalyDbContext db)
+    public AdminController(YalyDbContext db, IUserContext userContext) : base(userContext)
     {
         _db = db;
     }
@@ -23,7 +24,10 @@ public class AdminController : ControllerBase
         [FromQuery] string? template = null,
         [FromQuery] string? status = null)
     {
-        var query = _db.ExecutionLogs.AsQueryable();
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
+        var query = _db.ExecutionLogs.Where(e => e.OrgId == acc.OrgId);
 
         if (!string.IsNullOrEmpty(template))
             query = query.Where(e => e.TemplateName == template);
@@ -37,19 +41,16 @@ public class AdminController : ControllerBase
             .Take(pageSize)
             .ToListAsync();
 
-        return new ExecutionListResponse
-        {
-            Items = items,
-            Total = total,
-            Page = page,
-            PageSize = pageSize
-        };
+        return new ExecutionListResponse { Items = items, Total = total, Page = page, PageSize = pageSize };
     }
 
     [HttpGet("executions/{id}")]
     public async Task<ActionResult<ExecutionLog>> GetExecution(Guid id)
     {
-        var log = await _db.ExecutionLogs.FindAsync(id);
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
+        var log = await _db.ExecutionLogs.FirstOrDefaultAsync(e => e.Id == id && e.OrgId == acc.OrgId);
         if (log == null) return NotFound();
         return log;
     }
@@ -57,13 +58,22 @@ public class AdminController : ControllerBase
     [HttpGet("presets")]
     public async Task<ActionResult<List<OutputPreset>>> GetPresets()
     {
-        return await _db.OutputPresets.OrderBy(p => p.Name).ToListAsync();
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
+        return await _db.OutputPresets
+            .Where(p => p.OrgId == acc.OrgId)
+            .OrderBy(p => p.Name)
+            .ToListAsync();
     }
 
     [HttpGet("presets/{id}")]
     public async Task<ActionResult<OutputPreset>> GetPreset(Guid id)
     {
-        var preset = await _db.OutputPresets.FindAsync(id);
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
+        var preset = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Id == id && p.OrgId == acc.OrgId);
         if (preset == null) return NotFound();
         return preset;
     }
@@ -71,16 +81,21 @@ public class AdminController : ControllerBase
     [HttpPost("presets")]
     public async Task<ActionResult<OutputPreset>> CreatePreset([FromBody] OutputPreset preset)
     {
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
         if (string.IsNullOrWhiteSpace(preset.Name))
             return BadRequest(new { error = "Name is required" });
         if (string.IsNullOrWhiteSpace(preset.Repo))
             return BadRequest(new { error = "Repo is required" });
 
-        var existing = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Name == preset.Name);
+        var existing = await _db.OutputPresets
+            .FirstOrDefaultAsync(p => p.OrgId == acc.OrgId && p.Name == preset.Name);
         if (existing != null)
             return Conflict(new { error = $"Preset '{preset.Name}' already exists" });
 
         preset.Id = Guid.NewGuid();
+        preset.OrgId = acc.OrgId;
         preset.CreatedAt = DateTime.UtcNow;
         preset.UpdatedAt = DateTime.UtcNow;
 
@@ -92,7 +107,10 @@ public class AdminController : ControllerBase
     [HttpPut("presets/{id}")]
     public async Task<ActionResult<OutputPreset>> UpdatePreset(Guid id, [FromBody] OutputPreset update)
     {
-        var preset = await _db.OutputPresets.FindAsync(id);
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
+        var preset = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Id == id && p.OrgId == acc.OrgId);
         if (preset == null) return NotFound();
 
         if (!string.IsNullOrWhiteSpace(update.Name)) preset.Name = update.Name;
@@ -112,7 +130,10 @@ public class AdminController : ControllerBase
     [HttpDelete("presets/{id}")]
     public async Task<ActionResult> DeletePreset(Guid id)
     {
-        var preset = await _db.OutputPresets.FindAsync(id);
+        var (acc, error) = await RequireOrgAsync(platformEngineer: true);
+        if (error != null) return error;
+
+        var preset = await _db.OutputPresets.FirstOrDefaultAsync(p => p.Id == id && p.OrgId == acc.OrgId);
         if (preset == null) return NotFound();
 
         _db.OutputPresets.Remove(preset);

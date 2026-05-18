@@ -1,80 +1,117 @@
 import { useState, useEffect } from 'react'
-import { fetchTemplates } from '../api'
-import TemplateCard from '../components/TemplateCard'
+import { Link } from 'react-router-dom'
+import { fetchServices } from '../api'
+import { TEAMS } from '../constants'
+import {
+  Page, PageHeader, Spinner, ErrorState, EmptyState, LifecycleBadge, PrimaryLink, Pagination,
+} from '../components/ui'
+
+const PAGE_SIZE = 12
 
 export default function CatalogPage() {
-  const [templates, setTemplates] = useState([])
+  const [data, setData] = useState({ items: [], total: 0, page: 1, pageSize: PAGE_SIZE })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [team, setTeam] = useState('')
+  const [page, setPage] = useState(1)
 
-  const load = () => {
+  // Debounce search input so we don't hit the API on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Reset to page 1 whenever the filters change.
+  useEffect(() => { setPage(1) }, [debouncedSearch, team])
+
+  useEffect(() => {
     setLoading(true)
     setError(null)
-    fetchTemplates()
-      .then(setTemplates)
-      .catch((err) => setError(err))
+    fetchServices({ search: debouncedSearch, team, page, pageSize: PAGE_SIZE })
+      .then(setData)
+      .catch(setError)
       .finally(() => setLoading(false))
-  }
+  }, [debouncedSearch, team, page])
 
-  useEffect(() => { load() }, [])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-20">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mb-4">
-          <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-          </svg>
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900">{error.message}</h2>
-        {error.detail && (
-          <p className="mt-1 text-sm text-gray-500 max-w-md mx-auto">{error.detail}</p>
-        )}
-        <button
-          onClick={load}
-          className="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Retry
-        </button>
-      </div>
-    )
-  }
+  const totalPages = Math.ceil(data.total / PAGE_SIZE)
+  const hasFilters = debouncedSearch || team
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Templates</h1>
-        <p className="mt-2 text-gray-500">
-          Choose a template to get started. Each template will guide you through the inputs and commit the result to a repository.
-        </p>
+    <Page>
+      <PageHeader
+        kicker="Software Catalog"
+        title="Catalog"
+        description="Every service created through Yaly, with ownership and lifecycle. Populated automatically — nothing is hand-registered."
+      />
+
+      <div className="flex gap-3 mb-5">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search services…"
+          className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <select
+          value={team}
+          onChange={(e) => setTeam(e.target.value)}
+          className="px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value="">All teams</option>
+          {TEAMS.map((t) => <option key={t}>{t}</option>)}
+        </select>
       </div>
 
-      {templates.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4">
-            <span className="text-3xl">📭</span>
-          </div>
-          <h2 className="text-lg font-semibold text-gray-900">No templates found</h2>
-          <p className="mt-1 text-sm text-gray-500">Add YAML definitions to the catalog folder to get started.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {templates.map((t) => (
-            <TemplateCard key={t.metadata.name} template={t} />
-          ))}
-        </div>
+      {loading && <Spinner />}
+      {error && <ErrorState error={error} onRetry={() => setPage((p) => p)} />}
+
+      {!loading && !error && (
+        data.items.length === 0 ? (
+          <EmptyState
+            icon="📦"
+            title={hasFilters ? 'No matching services' : 'No services yet'}
+            description={
+              hasFilters
+                ? 'Try a different search or team filter.'
+                : 'Create your first service to populate the catalog.'
+            }
+            action={!hasFilters && <PrimaryLink to="/create">Create a service</PrimaryLink>}
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.items.map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/catalog/${s.id}`}
+                  className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-mono font-medium text-gray-900">{s.name}</span>
+                    <span className="ml-auto"><LifecycleBadge lifecycle={s.lifecycle} /></span>
+                  </div>
+                  <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
+                    {s.description || 'No description provided.'}
+                  </p>
+                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
+                    <span>{s.serviceType}</span>
+                    <span>·</span>
+                    <span>{s.team || 'Unassigned'}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={data.total}
+              noun="services"
+              onPage={setPage}
+            />
+          </>
+        )
       )}
-    </div>
+    </Page>
   )
 }
