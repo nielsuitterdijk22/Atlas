@@ -4,43 +4,55 @@
 
 A self-service developer portal that reads YAML + Markdown form definitions from a catalog folder, renders them as modern forms, and commits templated output to a target git repo.
 
-![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4) ![React](https://img.shields.io/badge/React-18-61DAFB) ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4)
+![Go](https://img.shields.io/badge/Go-1.25-00ADD8) ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![Zitadel](https://img.shields.io/badge/Auth-Zitadel-blue)
+
+Matches the architecture of Yaly's sibling projects (Quill, Forge, Tempo): a
+Next.js 14 App Router / TypeScript frontend over a Go backend (chi, pgx/sqlc,
+golang-migrate), authenticated via Zitadel OIDC.
 
 ## How It Works
 
 ```
-┌────────────────┐     ┌─────────────────────┐     ┌──────────────┐
-│  React + TW    │────▶│  ASP.NET Web API     │────▶│  Git (local  │
-│  (SPA frontend)│◀────│  - Catalog loader    │     │  or GitHub)  │
-└────────────────┘     │  - Scriban templates │     └──────────────┘
-                       └──────────┬──────────┘
-                                  │ reads
-                           ┌──────┴──────┐
-                           │  /catalog   │
-                           │  YAML + tpl │
-                           └─────────────┘
+┌──────────────────┐     ┌─────────────────────┐     ┌──────────────┐
+│  Next.js 14 (TS) │────▶│  Go API (chi)        │────▶│  Git (local  │
+│  NextAuth+Zitadel│◀────│  - Catalog loader    │     │  or GitHub)  │
+└──────────────────┘     │  - template renderer │     └──────────────┘
+                         └──────────┬──────────┘
+                                    │ reads
+                             ┌──────┴──────┐
+                             │  /catalog   │
+                             │  YAML + tpl │
+                             └─────────────┘
 ```
 
 1. **Define** a template in `catalog/` with a `form.yaml` and a `skeleton/` folder
 2. **Browse** templates in the web UI
 3. **Fill in** the form — inputs are generated from the YAML definition
-4. **Execute** — files are rendered with [Scriban](https://github.com/scriban/scriban) and committed to a git repo
+4. **Execute** — files are rendered and committed to a git repo
 
 ## Quick Start
 
 ### Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Go 1.25+](https://go.dev/dl/)
 - [Node.js 18+](https://nodejs.org/)
+- Docker (for local Postgres)
+- A Zitadel application (issuer, client id, project id) — see `backend/.env.example` and `frontend/.env.example`
+
+### Run Postgres
+
+```bash
+docker compose up -d postgres
+```
 
 ### Run the backend
 
 ```bash
-cd Yaly.Api
-dotnet run
+cd backend
+go run ./cmd/api
 ```
 
-The API starts on `http://localhost:5111`.
+The API starts on `http://localhost:8080` and applies database migrations automatically.
 
 ### Run the frontend
 
@@ -50,7 +62,7 @@ npm install
 npm run dev
 ```
 
-The dev server starts on `http://localhost:5173` with API proxy to the backend.
+The dev server starts on `http://localhost:3003` with an API proxy to the backend.
 
 ## Adding Templates
 
@@ -110,7 +122,9 @@ spec:
 
 ### Template Syntax
 
-Templates use [Scriban](https://github.com/scriban/scriban) (Liquid-like). All form input IDs are available as variables:
+Templates use a small Scriban-syntax subset (variable interpolation and
+if/else-if/else/end conditionals) implemented in `backend/internal/template`.
+All form input IDs are available as variables:
 
 ```
 # {{ app_name }}
@@ -142,10 +156,10 @@ output:
 | `GET` | `/api/templates` | List all templates |
 | `GET` | `/api/templates/{name}` | Get template details |
 | `POST` | `/api/templates/{name}/execute` | Execute a template |
-| `POST` | `/api/templates/reload` | Hot-reload the catalog |
+| `GET` | `/api/orgs`, `/api/services`, `/api/requests`, `/api/admin/*` | Organizations, catalog, provisioning requests, admin |
 
 ## Tech Stack
 
-- **Backend**: ASP.NET 9, Scriban, LibGit2Sharp, Octokit, YamlDotNet
-- **Frontend**: React 18, Vite, Tailwind CSS
-- **No auth** (yet)
+- **Backend**: Go, chi, pgx/sqlc, golang-migrate, go-git, go-github
+- **Frontend**: Next.js 14 (App Router), TypeScript, NextAuth v5
+- **Auth**: Zitadel OIDC (self-hosted)

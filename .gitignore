@@ -4,9 +4,10 @@ obj/
 *.user
 *.suo
 
-# Node
+# Node / Next.js
 node_modules/
 dist/
+.next/
 
 # IDE
 .vs/
@@ -28,3 +29,4 @@ data-protection-keys/
 
 # Secrets
 .env
+.env.local
