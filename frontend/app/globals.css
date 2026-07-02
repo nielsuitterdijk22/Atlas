@@ -793,6 +793,14 @@ tr:last-child td {
   margin-bottom: 8px;
 }
 
+.login-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #4ad);
+  flex: none;
+}
+
 .login-tagline {
   margin: 0 0 20px;
   color: var(--muted);
