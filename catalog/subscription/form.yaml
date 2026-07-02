@@ -1,4 +1,4 @@
-apiVersion: yaly/v1
+apiVersion: atlas/v1
 kind: Template
 metadata:
   name: create-subscription
@@ -41,5 +41,5 @@ spec:
         - large
       default: medium
   output:
-    preset: yaly-gh
+    preset: atlas-gh
     template: ./skeleton/

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 
-	"github.com/nielsuitterdijk22/yaly/internal/template"
+	"github.com/nielsuitterdijk22/atlas/internal/template"
 )
 
 // Entry pairs a parsed template definition with the directory it was loaded

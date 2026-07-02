@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
 )
 
 type userDTO struct {
@@ -22,7 +22,7 @@ type membershipDTO struct {
 
 // handleMe returns the signed-in user and the organizations they belong to.
 // requireAuth has already verified the token and (via the Zitadel verifier)
-// upserted the Yaly user record, so this only needs to load memberships.
+// upserted the Atlas user record, so this only needs to load memberships.
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	id, ok := identityFrom(r.Context())
 	if !ok {

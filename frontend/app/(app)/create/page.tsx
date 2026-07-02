@@ -40,7 +40,7 @@ export default function CreatePage() {
           <div className="kicker">Golden Paths</div>
           <h1>Create something</h1>
           <p className="desc">
-            Pick a template. Each one scaffolds a compliant service — fill in a short guided form and Yaly commits
+            Pick a template. Each one scaffolds a compliant service — fill in a short guided form and Atlas commits
             the result for you.
           </p>
         </div>

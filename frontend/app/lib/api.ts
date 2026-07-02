@@ -4,10 +4,10 @@
 // every call — server or client — attaches ctx.token explicitly. Client
 // Components call relative paths, proxied to the backend by next.config.mjs's
 // rewrite, so no CORS setup is needed on the backend; Server Components/Actions
-// call it directly via YALY_API_BASE_URL.
+// call it directly via ATLAS_API_BASE_URL.
 
 const isServer = typeof window === "undefined";
-const API_BASE = isServer ? process.env.YALY_API_BASE_URL || "http://localhost:8080" : "";
+const API_BASE = isServer ? process.env.ATLAS_API_BASE_URL || "http://localhost:8080" : "";
 
 export class ApiError extends Error {
   status: number;
@@ -19,13 +19,13 @@ export class ApiError extends Error {
   }
 }
 
-/** Per-call context: the active org (sent as X-Yaly-Org) and the caller's
+/** Per-call context: the active org (sent as X-Atlas-Org) and the caller's
  * Zitadel bearer token. */
 export type Ctx = { orgId?: string; token?: string };
 
 async function request<T>(path: string, ctx: Ctx = {}, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (ctx.orgId) headers.set("X-Yaly-Org", ctx.orgId);
+  if (ctx.orgId) headers.set("X-Atlas-Org", ctx.orgId);
   if (ctx.token) headers.set("Authorization", `Bearer ${ctx.token}`);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 

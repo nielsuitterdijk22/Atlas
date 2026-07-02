@@ -3,12 +3,12 @@
 // org's/user's catalog storage and mint a token to clone/push it.
 //
 // Every method here is a *user-context* call: it forwards the caller's own
-// Zitadel access token as the bearer. Quill and Yaly share one Zitadel
+// Zitadel access token as the bearer. Quill and Atlas share one Zitadel
 // project, so that token is already valid against Quill's API — no separate
 // token exchange or service credential is needed. This is deliberately not a
 // service/machine client: per Tempo's quill_integration.md design doc,
 // Zitadel machine users are reserved for true backend-to-backend sync (none
-// of which exists yet between Yaly and Quill).
+// of which exists yet between Atlas and Quill).
 package quill
 
 import (

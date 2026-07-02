@@ -12,7 +12,7 @@ const nextConfig = {
     // NextAuth's own dynamic route at app/api/auth/[...nextauth] — Next.js
     // resolves plain-array rewrites before dynamic routes, so a catch-all here
     // would swallow every /api/auth/* request before NextAuth ever saw it.
-    const api = process.env.YALY_API_BASE_URL || "http://localhost:8080";
+    const api = process.env.ATLAS_API_BASE_URL || "http://localhost:8080";
     return [
       { source: "/api/me", destination: `${api}/api/me` },
       { source: "/api/orgs", destination: `${api}/api/orgs` },

@@ -1,4 +1,4 @@
-module github.com/nielsuitterdijk22/yaly
+module github.com/nielsuitterdijk22/atlas
 
 go 1.26.4
 

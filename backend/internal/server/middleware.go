@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nielsuitterdijk22/yaly/internal/auth"
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/auth"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
 )
 
 type ctxKey int

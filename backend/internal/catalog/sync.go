@@ -10,8 +10,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 
-	"github.com/nielsuitterdijk22/yaly/internal/secret"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/secret"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
 )
 
 // SyncService clones an organization's catalog Git repo into its local cache directory.

@@ -11,16 +11,16 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"github.com/nielsuitterdijk22/yaly/internal/auth"
-	"github.com/nielsuitterdijk22/yaly/internal/catalog"
-	"github.com/nielsuitterdijk22/yaly/internal/config"
-	"github.com/nielsuitterdijk22/yaly/internal/provision"
-	"github.com/nielsuitterdijk22/yaly/internal/quill"
-	"github.com/nielsuitterdijk22/yaly/internal/secret"
-	"github.com/nielsuitterdijk22/yaly/internal/store"
+	"github.com/nielsuitterdijk22/atlas/internal/auth"
+	"github.com/nielsuitterdijk22/atlas/internal/catalog"
+	"github.com/nielsuitterdijk22/atlas/internal/config"
+	"github.com/nielsuitterdijk22/atlas/internal/provision"
+	"github.com/nielsuitterdijk22/atlas/internal/quill"
+	"github.com/nielsuitterdijk22/atlas/internal/secret"
+	"github.com/nielsuitterdijk22/atlas/internal/store"
 )
 
-// Server is the root HTTP handler for the Yaly backend.
+// Server is the root HTTP handler for the Atlas backend.
 type Server struct {
 	cfg         *config.Config
 	logger      *slog.Logger
@@ -75,7 +75,7 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{s.cfg.FrontendURL},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Yaly-Org"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Atlas-Org"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))

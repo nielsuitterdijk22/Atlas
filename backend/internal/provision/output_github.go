@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-github/v67/github"
 
-	"github.com/nielsuitterdijk22/yaly/internal/template"
+	"github.com/nielsuitterdijk22/atlas/internal/template"
 )
 
 type GitHubOutput struct {

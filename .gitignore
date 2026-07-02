@@ -18,8 +18,8 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Yaly output
-/tmp/yaly-output/
+# Atlas output
+/tmp/atlas-output/
 
 # Per-org catalog clones (runtime cache)
 catalog-cache/

@@ -1,7 +1,7 @@
 // Server-only session helpers. Identity comes from Zitadel via NextAuth
 // (app/auth.ts); the Zitadel access token is forwarded to the Go backend as
 // the bearer, which verifies it against Zitadel's JWKS (mirrors Quill's
-// lib/session.ts). Yaly's own Organization/Membership model still governs
+// lib/session.ts). Atlas's own Organization/Membership model still governs
 // which orgs a user belongs to and their role there — Zitadel only answers
 // "who is this person."
 import { cookies } from "next/headers";
@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { auth } from "../auth";
 import { fetchMe, type Me, type Membership } from "./api";
 
-export const ORG_COOKIE = "yaly_org";
+export const ORG_COOKIE = "atlas_org";
 
 export async function getToken(): Promise<string | undefined> {
   const session = await auth();

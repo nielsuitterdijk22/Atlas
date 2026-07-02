@@ -1,4 +1,4 @@
-apiVersion: yaly/v1
+apiVersion: atlas/v1
 kind: Template
 metadata:
   name: add-config
@@ -40,7 +40,7 @@ spec:
   output:
     target:
       type: local
-      repo: /tmp/yaly-output
+      repo: /tmp/atlas-output
       branch: main
       path: /
       commitMessage: "chore: add {{ environment }} config for {{ app_name }}"

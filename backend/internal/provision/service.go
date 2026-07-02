@@ -14,9 +14,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/nielsuitterdijk22/yaly/internal/store"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
-	"github.com/nielsuitterdijk22/yaly/internal/template"
+	"github.com/nielsuitterdijk22/atlas/internal/store"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/template"
 )
 
 // ExecuteResult is the outcome of rendering + committing a template.

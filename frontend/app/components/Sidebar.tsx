@@ -62,7 +62,7 @@ export function Sidebar({
       <div className="brand">
         <div className="dot">Y</div>
         <div>
-          <div>Yaly</div>
+          <div>Atlas</div>
           <div className="sub">Developer Portal</div>
         </div>
       </div>

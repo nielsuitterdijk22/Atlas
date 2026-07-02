@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
   return (
     <div className="onboard-page">
       <div className="onboard-card">
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Welcome to Yaly</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Welcome to Atlas</h1>
         <p>
           Hi {me.user.displayName}. Is this workspace just for you, or for your team? Either way you&apos;ll be its
           first platform engineer.

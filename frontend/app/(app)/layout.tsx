@@ -4,7 +4,7 @@ import { requireOrg } from "../lib/session";
 
 // AppLayout is the authenticated shell: a fixed sidebar plus the page body.
 // requireOrg gates every route in this group, redirecting to /login or
-// /onboarding as needed, and resolves which org is active from the yaly_org
+// /onboarding as needed, and resolves which org is active from the atlas_org
 // cookie (see session.ts's resolveActiveOrg).
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { me, org, token } = await requireOrg();

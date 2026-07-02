@@ -1,4 +1,4 @@
-# Yaly
+# Atlas
 
 > Like Backstage, but without the fuss.
 
@@ -6,7 +6,7 @@ A self-service developer portal that reads YAML + Markdown form definitions from
 
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8) ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![Zitadel](https://img.shields.io/badge/Auth-Zitadel-blue)
 
-Matches the architecture of Yaly's sibling projects (Quill, Forge, Tempo): a
+Matches the architecture of Atlas's sibling projects (Quill, Forge, Tempo): a
 Next.js 14 App Router / TypeScript frontend over a Go backend (chi, pgx/sqlc,
 golang-migrate), authenticated via Zitadel OIDC.
 
@@ -80,7 +80,7 @@ catalog/
 ### form.yaml
 
 ```yaml
-apiVersion: yaly/v1
+apiVersion: atlas/v1
 kind: Template
 metadata:
   name: my-template

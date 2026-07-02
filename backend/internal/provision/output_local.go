@@ -13,7 +13,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 
-	"github.com/nielsuitterdijk22/yaly/internal/template"
+	"github.com/nielsuitterdijk22/atlas/internal/template"
 )
 
 type LocalOutput struct {
@@ -67,7 +67,7 @@ func (o *LocalOutput) CommitFiles(_ context.Context, files map[string]string, ta
 	if err != nil {
 		return ExecuteResult{Success: false, Message: err.Error()}
 	}
-	sig := &object.Signature{Name: "Yaly", Email: "yaly@localhost", When: time.Now()}
+	sig := &object.Signature{Name: "Atlas", Email: "atlas@localhost", When: time.Now()}
 	sha, err := wt.Commit(commitMessage, &git.CommitOptions{Author: sig, Committer: sig})
 	if err != nil {
 		return ExecuteResult{Success: false, Message: err.Error()}

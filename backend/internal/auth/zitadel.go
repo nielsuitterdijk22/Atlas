@@ -16,16 +16,16 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jws"
 	"github.com/lestrrat-go/jwx/v3/jwt"
 
-	"github.com/nielsuitterdijk22/yaly/internal/config"
-	"github.com/nielsuitterdijk22/yaly/internal/quill"
-	"github.com/nielsuitterdijk22/yaly/internal/store"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/config"
+	"github.com/nielsuitterdijk22/atlas/internal/quill"
+	"github.com/nielsuitterdijk22/atlas/internal/store"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
 )
 
 // Verifier verifies Zitadel-issued RS256 access-token JWTs against the
-// instance JWKS and provisions Yaly users on first login. Ported from Quill's
+// instance JWKS and provisions Atlas users on first login. Ported from Quill's
 // internal/auth/zitadel.go, dropped the tenant-resolution and Forgejo
-// provisioning bits — Yaly's org membership isn't derived from Zitadel org
+// provisioning bits — Atlas's org membership isn't derived from Zitadel org
 // claims, and there's no Forgejo mirror here.
 //
 // Requires the Zitadel application's Access Token Type to be set to "JWT"
@@ -100,7 +100,7 @@ func (v *Verifier) refresh(ctx context.Context) error {
 	return nil
 }
 
-// Verify validates a Zitadel access-token JWT and returns the resolved Yaly identity.
+// Verify validates a Zitadel access-token JWT and returns the resolved Atlas identity.
 func (v *Verifier) Verify(ctx context.Context, token string) (Identity, error) {
 	v.mu.RLock()
 	ks := v.keySet
@@ -135,7 +135,7 @@ func (v *Verifier) Verify(ctx context.Context, token string) (Identity, error) {
 	return v.resolveIdentity(ctx, token, sub)
 }
 
-// resolveIdentity looks up or provisions the Yaly user for a Zitadel subject.
+// resolveIdentity looks up or provisions the Atlas user for a Zitadel subject.
 // rawToken is the bearer used to read the OIDC userinfo profile.
 func (v *Verifier) resolveIdentity(ctx context.Context, rawToken, subject string) (Identity, error) {
 	profile, err := v.fetchUserInfo(ctx, rawToken)
@@ -194,10 +194,10 @@ func (v *Verifier) resolveIdentity(ctx context.Context, rawToken, subject string
 }
 
 // mirrorQuillUser best-effort records the caller's Quill user id on their
-// Yaly user row (Tempo's quill_user_id pattern — see
-// ~/Documents/Repos/Tempo/quill_integration.md). Quill and Yaly share one
+// Atlas user row (Tempo's quill_user_id pattern — see
+// ~/Documents/Repos/Tempo/quill_integration.md). Quill and Atlas share one
 // Zitadel project, so rawToken is already valid against Quill's API. This
-// must never fail or slow down login: Quill being unreachable is not Yaly's
+// must never fail or slow down login: Quill being unreachable is not Atlas's
 // problem, so errors are logged and swallowed, and it only runs when the
 // column isn't already set (SetQuillUserID is a no-op update otherwise).
 func (v *Verifier) mirrorQuillUser(ctx context.Context, user db.User, rawToken string) {
@@ -221,7 +221,7 @@ func (v *Verifier) mirrorQuillUser(ctx context.Context, user db.User, rawToken s
 	}()
 }
 
-// userInfo holds the OIDC userinfo fields Yaly needs.
+// userInfo holds the OIDC userinfo fields Atlas needs.
 type userInfo struct {
 	Sub               string `json:"sub"`
 	Email             string `json:"email"`

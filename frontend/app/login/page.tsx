@@ -12,7 +12,7 @@ export default async function LoginPage() {
       <div className="login-card">
         <div className="login-brand">
           <div className="login-dot" />
-          <span>Yaly</span>
+          <span>Atlas</span>
         </div>
         <p className="login-tagline">Self-service developer portal. Sign in to continue.</p>
         <ZitadelSignInButton label="Sign in" />

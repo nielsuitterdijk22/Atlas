@@ -126,7 +126,7 @@ function CatalogStep({ orgId, orgName, mode }: { orgId: string; orgName: string;
             className="btn primary"
             style={{ flex: 1, justifyContent: "center" }}
             disabled={busy}
-            onClick={() => linkAndFinish({ mode: "personal", repoSlug: "yaly-catalog" })}
+            onClick={() => linkAndFinish({ mode: "personal", repoSlug: "atlas-catalog" })}
           >
             {busy ? "Setting up…" : "Set up in my Quill personal project"}
           </button>
@@ -220,7 +220,7 @@ function TeamCatalogPicker({
             className="btn primary"
             style={{ flex: 1, justifyContent: "center" }}
             disabled={busy || !newSlug.trim() || !newName.trim()}
-            onClick={() => onLink({ mode: "new", quillProjectSlug: newSlug.trim(), quillProjectName: newName.trim(), repoSlug: "yaly-catalog" })}
+            onClick={() => onLink({ mode: "new", quillProjectSlug: newSlug.trim(), quillProjectName: newName.trim(), repoSlug: "atlas-catalog" })}
           >
             {busy ? "Setting up…" : "Create project & connect"}
           </button>
@@ -229,7 +229,7 @@ function TeamCatalogPicker({
             className="btn primary"
             style={{ flex: 1, justifyContent: "center" }}
             disabled={busy || !selectedSlug}
-            onClick={() => onLink({ mode: "existing", quillProjectSlug: selectedSlug, repoSlug: "yaly-catalog" })}
+            onClick={() => onLink({ mode: "existing", quillProjectSlug: selectedSlug, repoSlug: "atlas-catalog" })}
           >
             {busy ? "Connecting…" : "Connect"}
           </button>

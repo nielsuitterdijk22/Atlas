@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
-	"github.com/nielsuitterdijk22/yaly/internal/provision"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/provision"
 )
 
 func (s *Server) handleListTemplates(w http.ResponseWriter, r *http.Request) {

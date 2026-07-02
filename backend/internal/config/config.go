@@ -1,4 +1,4 @@
-// Package config loads Yaly backend configuration from environment variables.
+// Package config loads Atlas backend configuration from environment variables.
 //
 // All settings have development-friendly defaults so the server can boot with
 // no configuration beyond a database URL. Production deployments must set
@@ -40,7 +40,7 @@ type Config struct {
 	Quill QuillConfig
 }
 
-// QuillConfig points at the sibling Quill instance Yaly integrates with
+// QuillConfig points at the sibling Quill instance Atlas integrates with
 // (shared Zitadel project — see internal/quill).
 type QuillConfig struct {
 	// APIBaseURL is Quill's backend API (e.g. "https://quill.black-tulip.nl").
@@ -64,20 +64,20 @@ type ZitadelConfig struct {
 // Load reads configuration from the environment.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Env:          getenv("YALY_ENV", "development"),
-		HTTPAddr:     getenv("YALY_HTTP_ADDR", ":8080"),
-		LogLevel:     getenv("YALY_LOG_LEVEL", "info"),
-		LogFormat:    getenv("YALY_LOG_FORMAT", "json"),
-		ReadTimeout:  getdur("YALY_HTTP_READ_TIMEOUT", 15*time.Second),
-		WriteTimeout: getdur("YALY_HTTP_WRITE_TIMEOUT", 30*time.Second),
-		DatabaseURL:  getenv("YALY_DATABASE_URL", "postgres://yaly:yaly_dev@localhost:5432/yaly?sslmode=disable"),
+		Env:          getenv("ATLAS_ENV", "development"),
+		HTTPAddr:     getenv("ATLAS_HTTP_ADDR", ":8080"),
+		LogLevel:     getenv("ATLAS_LOG_LEVEL", "info"),
+		LogFormat:    getenv("ATLAS_LOG_FORMAT", "json"),
+		ReadTimeout:  getdur("ATLAS_HTTP_READ_TIMEOUT", 15*time.Second),
+		WriteTimeout: getdur("ATLAS_HTTP_WRITE_TIMEOUT", 30*time.Second),
+		DatabaseURL:  getenv("ATLAS_DATABASE_URL", "postgres://atlas:atlas_dev@localhost:5432/atlas?sslmode=disable"),
 		Zitadel: ZitadelConfig{
 			Issuer:          strings.TrimSuffix(getenv("ZITADEL_ISSUER", ""), "/"),
 			ManagementToken: getenv("ZITADEL_MANAGEMENT_TOKEN", ""),
 		},
-		FrontendURL:      getenv("YALY_FRONTEND_URL", "http://localhost:3003"),
-		CatalogCachePath: getenv("YALY_CATALOG_CACHE_PATH", "./catalog-cache"),
-		SecretKeyPath:    getenv("YALY_SECRET_KEY_PATH", "./data-protection-keys/key"),
+		FrontendURL:      getenv("ATLAS_FRONTEND_URL", "http://localhost:3003"),
+		CatalogCachePath: getenv("ATLAS_CATALOG_CACHE_PATH", "./catalog-cache"),
+		SecretKeyPath:    getenv("ATLAS_SECRET_KEY_PATH", "./data-protection-keys/key"),
 		Quill: QuillConfig{
 			APIBaseURL:       strings.TrimSuffix(getenv("QUILL_API_BASE_URL", ""), "/"),
 			ForgejoPublicURL: strings.TrimSuffix(getenv("QUILL_FORGEJO_PUBLIC_URL", ""), "/"),

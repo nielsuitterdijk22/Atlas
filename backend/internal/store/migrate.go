@@ -10,7 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
 
-	"github.com/nielsuitterdijk22/yaly/internal/store/migrations"
+	"github.com/nielsuitterdijk22/atlas/internal/store/migrations"
 )
 
 // Migrate applies all pending "up" migrations embedded in the binary. It is

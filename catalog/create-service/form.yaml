@@ -1,4 +1,4 @@
-apiVersion: yaly/v1
+apiVersion: atlas/v1
 kind: Template
 metadata:
   name: create-service
@@ -48,7 +48,7 @@ spec:
   output:
     target:
       type: local
-      repo: /tmp/yaly-output
+      repo: /tmp/atlas-output
       branch: main
       path: /
       commitMessage: 'feat: scaffold {{service_name}}'

@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nielsuitterdijk22/yaly/internal/config"
-	"github.com/nielsuitterdijk22/yaly/internal/logging"
-	"github.com/nielsuitterdijk22/yaly/internal/server"
-	"github.com/nielsuitterdijk22/yaly/internal/store"
+	"github.com/nielsuitterdijk22/atlas/internal/config"
+	"github.com/nielsuitterdijk22/atlas/internal/logging"
+	"github.com/nielsuitterdijk22/atlas/internal/server"
+	"github.com/nielsuitterdijk22/atlas/internal/store"
 )
 
 func main() {
@@ -60,7 +60,7 @@ func run() error {
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
 
-	logger.Info("starting yaly api", "addr", cfg.HTTPAddr, "env", cfg.Env)
+	logger.Info("starting atlas api", "addr", cfg.HTTPAddr, "env", cfg.Env)
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("serve: %w", err)
 	}

@@ -1,9 +1,9 @@
 /* ============================================================================
-   Yaly design system
+   Atlas design system
    ----------------------------------------------------------------------------
-   Shared dark theme ported from Forge/Quill so Quill, Forge, Tempo, and Yaly
+   Shared dark theme ported from Forge/Quill so Quill, Forge, Tempo, and Atlas
    stay visually identical. Tokens first, then base, layout shell, and
-   components. Keep this the single source of truth for Yaly's look; extend
+   components. Keep this the single source of truth for Atlas's look; extend
    with new component classes rather than inlining styles in components.
    ========================================================================== */
 

@@ -1,7 +1,7 @@
 // NextAuth (Auth.js v5) configuration for the Zitadel OIDC provider — ported
 // from Quill's frontend/app/auth.ts. Zitadel is a public PKCE client (no
 // secret); the access token from the auth-code exchange is surfaced on the
-// session and forwarded to the Yaly backend as the bearer.
+// session and forwarded to the Atlas backend as the bearer.
 import NextAuth from "next-auth";
 import Zitadel from "next-auth/providers/zitadel";
 
@@ -32,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     : [],
   callbacks: {
     // Persist the Zitadel access token onto the NextAuth JWT so it can be
-    // forwarded to the Yaly backend as the bearer.
+    // forwarded to the Atlas backend as the bearer.
     async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token;

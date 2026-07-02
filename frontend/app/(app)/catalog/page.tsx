@@ -48,7 +48,7 @@ export default function CatalogPage() {
           <div className="kicker">Software Catalog</div>
           <h1>Catalog</h1>
           <p className="desc">
-            Every service created through Yaly, with ownership and lifecycle. Populated automatically — nothing is
+            Every service created through Atlas, with ownership and lifecycle. Populated automatically — nothing is
             hand-registered.
           </p>
         </div>

@@ -89,7 +89,7 @@ export default function OrgSettingsPage() {
             <div className="panel-pad">
               <div style={{ fontWeight: 600, marginBottom: 4 }}>Template catalog</div>
               <p className="hint" style={{ marginBottom: 16 }}>
-                Connect a Git repository holding your <code>form.yaml</code> templates. Yaly clones it on sync. Last
+                Connect a Git repository holding your <code>form.yaml</code> templates. Atlas clones it on sync. Last
                 synced: <strong>{timeAgo(org.lastCatalogSyncAt)}</strong>.
               </p>
               <div className="grid-2" style={{ gridTemplateColumns: "2fr 1fr" }}>

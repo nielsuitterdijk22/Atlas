@@ -7,8 +7,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
 )
 
 func (s *Server) handleListServices(w http.ResponseWriter, r *http.Request) {

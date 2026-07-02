@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
 )
 
 const (

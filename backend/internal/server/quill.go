@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
 )
 
 // handleListQuillProjects lists the caller's Quill projects, used by the org
@@ -67,7 +67,7 @@ func (s *Server) handleLinkQuillCatalog(w http.ResponseWriter, r *http.Request) 
 	}
 	repoSlug := strings.TrimSpace(body.RepoSlug)
 	if repoSlug == "" {
-		repoSlug = "yaly-catalog"
+		repoSlug = "atlas-catalog"
 	}
 
 	var projectSlug string
@@ -106,7 +106,7 @@ func (s *Server) handleLinkQuillCatalog(w http.ResponseWriter, r *http.Request) 
 		httpx.Error(w, http.StatusBadGateway, "failed to create Quill repo: "+err.Error())
 		return
 	}
-	gitToken, err := s.quill.CreateGitToken(r.Context(), token, "yaly-"+org.Slug)
+	gitToken, err := s.quill.CreateGitToken(r.Context(), token, "atlas-"+org.Slug)
 	if err != nil {
 		httpx.Error(w, http.StatusBadGateway, "failed to mint Quill git token: "+err.Error())
 		return

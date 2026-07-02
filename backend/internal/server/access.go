@@ -5,13 +5,13 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/nielsuitterdijk22/yaly/internal/auth"
-	"github.com/nielsuitterdijk22/yaly/internal/httpx"
-	"github.com/nielsuitterdijk22/yaly/internal/store/db"
+	"github.com/nielsuitterdijk22/atlas/internal/auth"
+	"github.com/nielsuitterdijk22/atlas/internal/httpx"
+	"github.com/nielsuitterdijk22/atlas/internal/store/db"
 )
 
 // accessContext is the per-request access context: who is calling, which
-// organization is active (from the X-Yaly-Org header), and their role within
+// organization is active (from the X-Atlas-Org header), and their role within
 // it. Mirrors the old .NET AccessContext/UserContext.
 type accessContext struct {
 	Identity   auth.Identity
@@ -34,10 +34,10 @@ func (s *Server) requireOrg(w http.ResponseWriter, r *http.Request, platformEngi
 		return accessContext{}, false
 	}
 
-	orgHeader := r.Header.Get("X-Yaly-Org")
+	orgHeader := r.Header.Get("X-Atlas-Org")
 	orgID, err := uuid.Parse(orgHeader)
 	if err != nil {
-		httpx.Error(w, http.StatusForbidden, "No active organization — send a valid X-Yaly-Org header.")
+		httpx.Error(w, http.StatusForbidden, "No active organization — send a valid X-Atlas-Org header.")
 		return accessContext{}, false
 	}
 

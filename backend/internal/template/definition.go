@@ -2,7 +2,7 @@
 // folders using the minimal Scriban-syntax subset the templates rely on.
 package template
 
-// Definition mirrors the catalog's form.yaml shape (apiVersion: yaly/v1, kind: Template).
+// Definition mirrors the catalog's form.yaml shape (apiVersion: atlas/v1, kind: Template).
 type Definition struct {
 	APIVersion string   `yaml:"apiVersion" json:"apiVersion"`
 	Kind       string   `yaml:"kind" json:"kind"`
