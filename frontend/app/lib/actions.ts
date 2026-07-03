@@ -14,14 +14,17 @@ export async function signOutAction(): Promise<void> {
 
 type CreateOrgResult = { orgId?: string; orgName?: string; error?: string };
 
-/** Creates an organization and makes it the active org — used by both
- * onboarding paths (personal: name derived from the user; team: user-chosen
- * name). Does not redirect — onboarding continues to the catalog-storage step. */
+/** Creates an organization — used by both onboarding paths (personal: name
+ * derived from the user; team: user-chosen name). Deliberately does NOT set
+ * ORG_COOKIE yet: doing so here would mutate cookies mid-flow, which makes
+ * Next.js refresh the /onboarding route, re-run its `memberships.length > 0`
+ * guard (now true), and redirect to "/" before the user ever sees the
+ * catalog/Quill-linking step. The cookie is set in finishOnboardingAction
+ * instead, once onboarding is actually done. */
 async function createOrgAndActivate(name: string): Promise<CreateOrgResult> {
   const token = await getToken();
   try {
     const org = await createOrganization(name, { token });
-    cookies().set(ORG_COOKIE, org.id, { path: "/", maxAge: 60 * 60 * 24 * 365 });
     return { orgId: org.id, orgName: org.name };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to create organization" };
@@ -62,6 +65,7 @@ export async function linkQuillCatalogAction(
   }
 }
 
-export async function finishOnboardingAction(): Promise<void> {
+export async function finishOnboardingAction(orgId: string): Promise<void> {
+  cookies().set(ORG_COOKIE, orgId, { path: "/", maxAge: 60 * 60 * 24 * 365 });
   redirect("/");
 }

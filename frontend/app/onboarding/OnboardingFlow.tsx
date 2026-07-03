@@ -94,7 +94,7 @@ function CatalogStep({ orgId, orgName, mode }: { orgId: string; orgName: string;
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const skip = () => startTransition(finishOnboardingAction);
+  const skip = () => startTransition(() => finishOnboardingAction(orgId));
 
   const linkAndFinish = (body: Parameters<typeof linkQuillCatalogAction>[1]) => {
     setBusy(true);
@@ -106,7 +106,7 @@ function CatalogStep({ orgId, orgName, mode }: { orgId: string; orgName: string;
         setBusy(false);
         return;
       }
-      await finishOnboardingAction();
+      await finishOnboardingAction(orgId);
     });
   };
 

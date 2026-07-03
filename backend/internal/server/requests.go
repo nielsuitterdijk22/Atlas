@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nielsuitterdijk22/atlas/internal/catalog"
 	"github.com/nielsuitterdijk22/atlas/internal/httpx"
 	"github.com/nielsuitterdijk22/atlas/internal/provision"
 	"github.com/nielsuitterdijk22/atlas/internal/store/db"
@@ -118,11 +120,44 @@ func (s *Server) handleCreateRequest(w http.ResponseWriter, r *http.Request) {
 		httpx.Error(w, http.StatusInternalServerError, "failed to create request")
 		return
 	}
+	s.pushRequestToQuillCatalog(req, values)
 
 	if !spec.ApprovalRequired {
 		req = s.provisionRequest(r.Context(), req, def, entry.BasePath, values)
 	}
 	httpx.JSON(w, http.StatusCreated, req)
+}
+
+// pushRequestToQuillCatalog best-effort records a submitted request's answers
+// to the org's linked Quill catalog repo (requests/<template>/<id>.json),
+// alongside the Postgres row CreateRequest already wrote. The catalog repo is
+// optional (catalog.PushRequestRecord no-ops without one) and unreachable git
+// must never fail request submission, so this runs in the background and
+// only logs on error — mirrors the mirrorQuillUser pattern in internal/auth.
+func (s *Server) pushRequestToQuillCatalog(req db.ProvisioningRequest, values map[string]any) {
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		org, err := s.store.GetOrganizationByID(ctx, req.OrgID)
+		if err != nil {
+			s.logger.Warn("catalog request push skipped: failed to load organization", "requestId", req.ID, "error", err)
+			return
+		}
+		rec := catalog.RequestRecord{
+			ID:           req.ID,
+			TemplateName: req.TemplateName,
+			Name:         req.Name,
+			Team:         req.Team.String,
+			Owner:        req.Owner.String,
+			SubmittedBy:  req.SubmittedBy.String,
+			Status:       req.Status,
+			Values:       values,
+			SubmittedAt:  req.CreatedAt,
+		}
+		if err := catalog.PushRequestRecord(ctx, org, s.protector, rec); err != nil {
+			s.logger.Warn("catalog request push failed", "requestId", req.ID, "error", err)
+		}
+	}()
 }
 
 func (s *Server) handleApproveRequest(w http.ResponseWriter, r *http.Request) {
