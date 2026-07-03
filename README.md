@@ -158,6 +158,12 @@ output:
 | `POST` | `/api/templates/{name}/execute` | Execute a template |
 | `GET` | `/api/orgs`, `/api/services`, `/api/requests`, `/api/admin/*` | Organizations, catalog, provisioning requests, admin |
 
+## Production Deployment
+
+`deploy/compose/` has a Docker Compose stack for running Atlas on the same VM
+as Quill, sharing its Zitadel instance and Caddy reverse proxy instead of
+standing up either one a second time. See `deploy/compose/README.md`.
+
 ## Tech Stack
 
 - **Backend**: Go, chi, pgx/sqlc, golang-migrate, go-git, go-github

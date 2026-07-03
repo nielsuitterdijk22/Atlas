@@ -1,0 +1,101 @@
+# Atlas production stack — meant to run alongside Quill (and Forge/Tempo) on
+# the same VM, sharing the Zitadel instance Quill's compose stack owns and the
+# Caddy reverse proxy that already claims host ports 80/443.
+#
+#   docker compose -f deploy/compose/docker-compose.yml up -d --build
+#
+# Services:
+#   postgres  (internal)  metadata for Atlas
+#   api       (internal)  Atlas Go backend
+#   web       (internal)  Atlas Next.js frontend, joined to Quill's Docker
+#                          network so its Caddy can reverse_proxy to it by
+#                          container name — see deploy/compose/README.md.
+#
+# Nothing here binds a host port: Quill's Caddy is the only public entrypoint
+# on the VM. Atlas does not run its own Caddy or Zitadel.
+
+name: atlas
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # The api container runs as a distroless nonroot user (UID 65532) with no
+  # shell, so it can't chown its own data volume. This one-shot init does it
+  # before api starts — same trick Quill uses for Zitadel's ./out mount.
+  atlas-init:
+    image: alpine:3
+    command: ["sh", "-c", "chown -R 65532:65532 /data"]
+    volumes:
+      - atlas-data:/data
+
+  api:
+    build:
+      context: ../../backend
+    container_name: atlas-api
+    environment:
+      ATLAS_ENV: ${ATLAS_ENV:-production}
+      ATLAS_HTTP_ADDR: ":8080"
+      ATLAS_LOG_FORMAT: json
+      ATLAS_DATABASE_URL: postgres://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${POSTGRES_DB:-atlas}?sslmode=disable
+      ATLAS_FRONTEND_URL: "${ATLAS_FRONTEND_URL:?set to the public https URL Atlas is served at}"
+      ATLAS_CATALOG_CACHE_PATH: /data/catalog-cache
+      ATLAS_SECRET_KEY_PATH: /data/keys/key
+      ZITADEL_ISSUER: "${ZITADEL_ISSUER:?set to Quill's shared Zitadel issuer}"
+      ZITADEL_MANAGEMENT_TOKEN: ${ZITADEL_MANAGEMENT_TOKEN:-}
+      QUILL_API_BASE_URL: ${QUILL_API_BASE_URL:-}
+      QUILL_FORGEJO_PUBLIC_URL: ${QUILL_FORGEJO_PUBLIC_URL:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    volumes:
+      - atlas-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      atlas-init:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ../../frontend
+      args:
+        # Client-side, so these must be build args (see frontend/Dockerfile) —
+        # runtime `environment:` below wouldn't reach the browser bundle.
+        NEXT_PUBLIC_QUILL_URL: ${NEXT_PUBLIC_QUILL_URL:-}
+        NEXT_PUBLIC_TEMPO_URL: ${NEXT_PUBLIC_TEMPO_URL:-}
+        NEXT_PUBLIC_FORGE_URL: ${NEXT_PUBLIC_FORGE_URL:-}
+    container_name: atlas-web
+    environment:
+      NODE_ENV: production
+      ATLAS_API_BASE_URL: http://api:8080
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET:?generate with openssl rand -hex 32}"
+      NEXT_PUBLIC_ZITADEL_ISSUER: "${ZITADEL_ISSUER:?set to Quill's shared Zitadel issuer}"
+      NEXT_PUBLIC_ZITADEL_CLIENT_ID: "${ZITADEL_CLIENT_ID:?Zitadel application client ID registered for Atlas}"
+      NEXT_PUBLIC_ZITADEL_PROJECT_ID: "${ZITADEL_PROJECT_ID:?Zitadel project ID}"
+    depends_on:
+      - api
+    networks:
+      - default
+      # Lets Quill's Caddy (a separate compose project) reach this container
+      # by name. Requires the Quill stack to already be up at least once, so
+      # the network exists — see deploy/compose/README.md.
+      - edge
+
+networks:
+  edge:
+    external: true
+    name: ${EDGE_NETWORK_NAME:-quill_default}
+
+volumes:
+  pgdata:
+  atlas-data:
