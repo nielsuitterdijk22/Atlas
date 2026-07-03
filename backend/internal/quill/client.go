@@ -145,7 +145,7 @@ type GitToken struct {
 // Me returns the caller's Quill user profile.
 func (c *Client) Me(ctx context.Context, token string) (User, error) {
 	var out User
-	err := c.do(ctx, token, http.MethodGet, "/api/v1/me", nil, &out)
+	err := c.do(ctx, token, http.MethodGet, "/api/backend/me", nil, &out)
 	return out, err
 }
 
@@ -154,7 +154,7 @@ func (c *Client) ListMyProjects(ctx context.Context, token string) ([]Project, e
 	var out struct {
 		Projects []Project `json:"projects"`
 	}
-	err := c.do(ctx, token, http.MethodGet, "/api/v1/me/projects", nil, &out)
+	err := c.do(ctx, token, http.MethodGet, "/api/backend/me/projects", nil, &out)
 	return out.Projects, err
 }
 
@@ -164,14 +164,14 @@ func (c *Client) EnsurePersonalProject(ctx context.Context, token string) (strin
 	var out struct {
 		Slug string `json:"slug"`
 	}
-	err := c.do(ctx, token, http.MethodPost, "/api/v1/me/personal-project", nil, &out)
+	err := c.do(ctx, token, http.MethodPost, "/api/backend/me/personal-project", nil, &out)
 	return out.Slug, err
 }
 
 // CreateProject provisions a new org-owned Quill project.
 func (c *Client) CreateProject(ctx context.Context, token, slug, name string) (Project, error) {
 	var out Project
-	err := c.do(ctx, token, http.MethodPost, "/api/v1/projects/", map[string]string{
+	err := c.do(ctx, token, http.MethodPost, "/api/backend/projects/", map[string]string{
 		"slug": slug,
 		"name": name,
 	}, &out)
@@ -181,7 +181,7 @@ func (c *Client) CreateProject(ctx context.Context, token, slug, name string) (P
 // CreateRepo provisions a new repository under an existing Quill project.
 func (c *Client) CreateRepo(ctx context.Context, token, projectSlug, repoSlug, name string) (Repo, error) {
 	var out Repo
-	err := c.do(ctx, token, http.MethodPost, "/api/v1/projects/"+projectSlug+"/repos/", map[string]string{
+	err := c.do(ctx, token, http.MethodPost, "/api/backend/projects/"+projectSlug+"/repos/", map[string]string{
 		"slug":       repoSlug,
 		"name":       name,
 		"visibility": "private",
@@ -193,6 +193,6 @@ func (c *Client) CreateRepo(ctx context.Context, token, projectSlug, repoSlug, n
 // value is shown once — the caller must persist it immediately (encrypted).
 func (c *Client) CreateGitToken(ctx context.Context, token, label string) (GitToken, error) {
 	var out GitToken
-	err := c.do(ctx, token, http.MethodPost, "/api/v1/me/git-token", map[string]string{"name": label}, &out)
+	err := c.do(ctx, token, http.MethodPost, "/api/backend/me/git-token", map[string]string{"name": label}, &out)
 	return out, err
 }
