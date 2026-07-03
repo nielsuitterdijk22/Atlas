@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOutAction } from "../lib/actions";
 import type { Membership, User } from "../lib/api";
 import { setActiveOrgId } from "../lib/org-client";
+import { AppSwitcher } from "./AppSwitcher";
+import { AppTile } from "./icons/AppMarks";
 
 const icons: Record<string, string> = {
   home: "M2.25 12l8.954-8.955a1.5 1.5 0 012.122 0L21 12M4.5 9.75v9.75A.75.75 0 005.25 21h3.75v-6h6v6h3.75a.75.75 0 00.75-.75V9.75",
@@ -60,7 +62,8 @@ export function Sidebar({
   return (
     <aside className="side">
       <div className="brand">
-        <div className="dot">Y</div>
+        <AppSwitcher current="atlas" />
+        <AppTile app="atlas" size={32} />
         <div>
           <div>Atlas</div>
           <div className="sub">Developer Portal</div>

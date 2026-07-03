@@ -12,6 +12,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars used by client components (the app switcher) are inlined
+# at build time, so they must be build args, not just runtime env.
+ARG NEXT_PUBLIC_QUILL_URL
+ARG NEXT_PUBLIC_TEMPO_URL
+ARG NEXT_PUBLIC_FORGE_URL
+ENV NEXT_PUBLIC_QUILL_URL=$NEXT_PUBLIC_QUILL_URL
+ENV NEXT_PUBLIC_TEMPO_URL=$NEXT_PUBLIC_TEMPO_URL
+ENV NEXT_PUBLIC_FORGE_URL=$NEXT_PUBLIC_FORGE_URL
 RUN npm run build
 
 # ---- run ----

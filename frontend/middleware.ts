@@ -22,5 +22,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // icon.svg is the App Router's favicon convention (app/icon.svg) — must
+  // stay reachable without a session, same as favicon.ico.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };
