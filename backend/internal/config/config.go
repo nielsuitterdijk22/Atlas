@@ -80,7 +80,7 @@ func Load() (*Config, error) {
 		SecretKeyPath:    getenv("ATLAS_SECRET_KEY_PATH", "./data-protection-keys/key"),
 		Quill: QuillConfig{
 			APIBaseURL:       strings.TrimSuffix(getenv("QUILL_API_BASE_URL", ""), "/"),
-			ForgejoPublicURL: strings.TrimSuffix(getenv("QUILL_FORGEJO_PUBLIC_URL", ""), "/"),
+			ForgejoPublicURL: strings.TrimSuffix(getenv("FORGEJO_PUBLIC_URL", ""), "/"),
 		},
 	}
 	return cfg, nil
