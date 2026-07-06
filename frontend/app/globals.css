@@ -557,6 +557,15 @@ label {
   border-color: var(--accent);
 }
 
+.card-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
 .tpl-card-body {
   display: flex;
   gap: 14px;

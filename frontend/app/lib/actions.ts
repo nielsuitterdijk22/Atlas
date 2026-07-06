@@ -1,15 +1,37 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { signOut } from "../auth";
-import { createOrganization, linkQuillCatalog, listQuillProjects, type LinkQuillCatalogBody, type QuillProject } from "./api";
+import { auth, getZitadelEndSessionUrl, signOut } from "../auth";
+import { ApiError, createOrganization, linkQuillCatalog, listQuillProjects, type LinkQuillCatalogBody, type QuillProject } from "./api";
 import { getToken, ORG_COOKIE } from "./session";
 
+// ApiError.message is a generic "Request failed (502)" — the actionable part
+// (e.g. the upstream Quill error, or "connection refused") lives in .detail
+// and gets lost if callers only read .message.
+function describeError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.detail ? `${err.message}: ${err.detail}` : err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
+
+// Plain NextAuth signOut only clears Atlas's own session cookie — Zitadel's
+// IdP session cookie survives, so the next sign-in silently re-authenticates
+// against it with no login/account UI at all. Capture the id token and end
+// Zitadel's session too (RP-initiated logout) before landing on /login.
 export async function signOutAction(): Promise<void> {
+  const session = await auth();
+  const idToken = (session as { idToken?: string } | null)?.idToken;
+
   cookies().delete(ORG_COOKIE);
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirect: false });
+
+  const h = headers();
+  const proto = h.get("x-forwarded-proto") ?? (h.get("host")?.includes("localhost") ? "http" : "https");
+  const origin = `${proto}://${h.get("host")}`;
+  const endSessionUrl = await getZitadelEndSessionUrl(idToken, `${origin}/login`);
+  redirect(endSessionUrl ?? "/login");
 }
 
 type CreateOrgResult = { orgId?: string; orgName?: string; error?: string };
@@ -27,7 +49,7 @@ async function createOrgAndActivate(name: string): Promise<CreateOrgResult> {
     const org = await createOrganization(name, { token });
     return { orgId: org.id, orgName: org.name };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to create organization" };
+    return { error: describeError(err, "Failed to create organization") };
   }
 }
 
@@ -48,7 +70,7 @@ export async function fetchQuillProjectsAction(): Promise<{ projects?: QuillProj
     const projects = await listQuillProjects({ token });
     return { projects };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Could not reach Quill" };
+    return { error: describeError(err, "Could not reach Quill") };
   }
 }
 
@@ -61,7 +83,7 @@ export async function linkQuillCatalogAction(
     await linkQuillCatalog(orgId, body, { orgId, token });
     return { ok: true };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to set up catalog storage in Quill" };
+    return { error: describeError(err, "Failed to set up catalog storage in Quill") };
   }
 }
 
