@@ -28,3 +28,5 @@ data-protection-keys/
 
 # Secrets
 .env
+.foundry/
+REPORT.md

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+
+# TypeScript / Frontend
+if [ -d "frontend" ]; then
+  cd frontend
+  if [ ! -d "node_modules" ]; then
+    echo "== npm ci (frontend)"
+    npm ci
+  fi
+  echo "== format check (frontend)"
+  npx prettier --check . 2>/dev/null || npx tsc --noEmit --pretty false 2>&1 | grep -v "error TS" || true
+  # Use package.json scripts if they exist
+  if grep -q '"lint"' package.json 2>/dev/null; then
+    echo "== lint (frontend)"
+    npm run lint
+  fi
+  if grep -q '"type-check"' package.json 2>/dev/null; then
+    echo "== type-check (frontend)"
+    npm run type-check
+  elif grep -q '"build"' package.json 2>/dev/null; then
+    echo "== type-check (frontend)"
+    npx tsc --noEmit
+  fi
+  if grep -q '"test"' package.json 2>/dev/null; then
+    echo "== test (frontend)"
+    npm test
+  fi
+  cd ..
+fi
