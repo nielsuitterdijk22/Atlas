@@ -109,7 +109,9 @@ export default function Sidebar() {
         )}
         <div className="min-w-0 flex-1">
           <div className="text-sm text-white font-medium truncate">{user?.displayName}</div>
-          <div className="text-[11px] text-slate-500 truncate">@{user?.gitHubLogin}</div>
+          <div className="text-[11px] text-slate-500 truncate">
+            @{user?.gitHubLogin || user?.email || user?.displayName}
+          </div>
         </div>
         <button
           onClick={signOut}

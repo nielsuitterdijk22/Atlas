@@ -48,7 +48,7 @@ export default function WizardPage() {
   const [loadError, setLoadError] = useState(null)
 
   const [step, setStep] = useState(0)
-  const [basics, setBasics] = useState({ name: '', team: TEAMS[0], owner: user.gitHubLogin })
+  const [basics, setBasics] = useState({ name: '', team: TEAMS[0], owner: user.gitHubLogin || user.email || '' })
   const [values, setValues] = useState({})
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)

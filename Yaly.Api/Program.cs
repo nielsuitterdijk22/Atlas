@@ -44,11 +44,18 @@ builder.Services.AddScoped<CatalogSyncService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 
 var frontendUrl = builder.Configuration["Frontend:Url"] ?? "http://localhost:5173";
+var zitadelAuthority = Environment.GetEnvironmentVariable("ZITADEL_AUTHORITY") ?? "";
+var zitadelClientId = Environment.GetEnvironmentVariable("ZITADEL_CLIENT_ID") ?? "";
+var zitadelClientSecret = Environment.GetEnvironmentVariable("ZITADEL_CLIENT_SECRET") ?? "";
+// The suite standard is Zitadel SSO; GitHub remains as a dev fallback.
+var defaultChallengeScheme = !string.IsNullOrEmpty(zitadelAuthority) && !string.IsNullOrEmpty(zitadelClientId)
+    ? "Zitadel"
+    : "GitHub";
 
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = "GitHub";
+        options.DefaultChallengeScheme = defaultChallengeScheme;
     })
     .AddCookie(options =>
     {
@@ -74,6 +81,29 @@ builder.Services.AddAuthentication(options =>
         options.Events.OnRemoteFailure = ctx =>
         {
             var reason = Uri.EscapeDataString(ctx.Failure?.Message ?? "GitHub sign-in failed");
+            ctx.Response.Redirect($"{frontendUrl}?authError={reason}");
+            ctx.HandleResponse();
+            return Task.CompletedTask;
+        };
+    })
+    .AddOpenIdConnect("Zitadel", options =>
+    {
+        options.Authority = zitadelAuthority;
+        options.ClientId = zitadelClientId;
+        options.ClientSecret = zitadelClientSecret;
+        options.ResponseType = "code";
+        options.CallbackPath = "/signin-zitadel";
+        options.GetClaimsFromUserInfoEndpoint = true;
+        options.SaveTokens = true;
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        options.MapInboundClaims = false;
+        options.Events.OnCreatingTicket = ZitadelLoginHandler.OnCreatingTicket;
+        options.Events.OnRemoteFailure = ctx =>
+        {
+            var reason = Uri.EscapeDataString(ctx.Failure?.Message ?? "Zitadel sign-in failed");
             ctx.Response.Redirect($"{frontendUrl}?authError={reason}");
             ctx.HandleResponse();
             return Task.CompletedTask;
