@@ -159,7 +159,7 @@ Backend: Add `/api/admin/templates/{name}` PUT endpoint. Validate YAML, update d
 - Accept: 1. `go test ./internal/handlers/... -run TestProvisioningQuota` passes.
 2. Free tier user at 50 repos receives 403 when attempting to provision.
 - Tests may change: no
-- Needs: T-002, Quill/T-001
+- Needs: T-002, Quill/T-018
 
 Backend: Before provisioning, check the user's current tier and repository count. If limit is reached, return 403 with a specific error message. Coordinate with Quill's quota API if necessary.
 
