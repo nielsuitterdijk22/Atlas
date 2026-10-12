@@ -33,10 +33,10 @@ public static class GitHubLoginHandler
 
         var db = ctx.HttpContext.RequestServices.GetRequiredService<YalyDbContext>();
 
-        var user = await db.Users.FirstOrDefaultAsync(u => u.GitHubId == gitHubId);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Provider == "github" && u.ProviderId == gitHubId.ToString());
         if (user == null)
         {
-            user = new User { GitHubId = gitHubId };
+            user = new User { Provider = "github", ProviderId = gitHubId.ToString(), GitHubId = gitHubId };
             db.Users.Add(user);
         }
 

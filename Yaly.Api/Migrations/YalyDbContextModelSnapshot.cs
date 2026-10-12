@@ -411,7 +411,7 @@ namespace Yaly.Api.Migrations
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)");
 
-                    b.Property<long>("GitHubId")
+                    b.Property<long?>("GitHubId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("GitHubLogin")
@@ -422,9 +422,21 @@ namespace Yaly.Api.Migrations
                     b.Property<DateTime>("LastLoginAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Provider")
+                        .ValueGeneratedOnAdd()
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("github");
+
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("GitHubId")
+                    b.HasIndex("Provider", "ProviderId")
                         .IsUnique();
 
                     b.ToTable("Users");

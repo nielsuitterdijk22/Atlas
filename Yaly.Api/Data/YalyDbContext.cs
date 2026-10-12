@@ -81,11 +81,13 @@ public class YalyDbContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Provider).IsRequired().HasMaxLength(50).HasDefaultValue("github");
+            entity.Property(e => e.ProviderId).IsRequired().HasMaxLength(200);
             entity.Property(e => e.GitHubLogin).IsRequired().HasMaxLength(200);
             entity.Property(e => e.DisplayName).HasMaxLength(200);
             entity.Property(e => e.Email).HasMaxLength(320);
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
-            entity.HasIndex(e => e.GitHubId).IsUnique();
+            entity.HasIndex(e => new { e.Provider, e.ProviderId }).IsUnique();
         });
 
         modelBuilder.Entity<Organization>(entity =>
