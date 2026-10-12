@@ -5,35 +5,12 @@ to **Parked** or **Done** itself — keep the `### T-NNN: Title` headings and fi
 
 ## Todo
 
-### T-016: Stabilize Frontend TypeScript Configuration
-- Story: (CTO)
-- Accept: `cd frontend && npx tsc --noEmit` exits 0
-- Tests may change: no
-
-Ensure `frontend/tsconfig.json` is valid and all type errors are resolved. If `tsc` hangs, check for circular imports or missing `@types` packages in `package.json`. This is a prerequisite for the full check to pass quickly.
-
-### T-017: Fix Check Script Execution Path
-- Story: (CTO)
-- Accept: `./check` exits 0 in <60 seconds
-- Tests may change: no
-- Needs: Atlas/T-001
-
-Inspect the `./check` script. If it runs `tsc`, `prettier`, and `build` sequentially and times out, optimize it or ensure the underlying commands are fast. If the script is broken or missing, create a minimal `check` script that runs the essential verification steps (lint, type-check, test) and ensures it exits 0. Do not delete tests, but ensure the script logic is sound.
-
-### T-001: Establish Foundation: Make ./check Pass
-- Story: US-008
-- Accept: Run `./check` in the repository root; exit code must be 0.
-- Tests may change: no
-
-Fix any failing Go tests, linting errors, or TypeScript build errors in the backend and frontend to ensure the baseline is green before adding new features.
-
 ### T-002: Implement Zitadel OIDC Authentication
 - Story: US-008
 - Accept: 1. `go test ./internal/auth/...` passes.
 2. `npm run build` in frontend passes.
 3. Mock Zitadel token validation returns 200 for valid JWT, 401 for invalid.
 - Tests may change: no
-- Needs: T-017
 
 Backend: Add JWT validation middleware for Zitadel tokens, extract user/tenant claims. Frontend: Configure NextAuth v5 with Zitadel provider, set up session handling and middleware for protected routes.
 
@@ -42,7 +19,6 @@ Backend: Add JWT validation middleware for Zitadel tokens, extract user/tenant c
 - Accept: 1. `go test ./internal/auth/... -run TestSessionExpiry` passes.
 2. `npm run test` in frontend passes for logout flow.
 - Tests may change: no
-- Needs: T-001
 
 Backend: Implement session invalidation endpoint and inactivity check. Frontend: Add logout button that calls backend invalidation and clears local session, redirecting to login.
 
@@ -51,7 +27,6 @@ Backend: Implement session invalidation endpoint and inactivity check. Frontend:
 - Accept: 1. `go test ./internal/handlers/... -run TestTenantIsolationRead` passes.
 2. Query for Tenant A service in Tenant B returns 404.
 - Tests may change: no
-- Needs: T-001
 
 Backend: Add `tenant_id` filtering to all SQL queries in the service catalog and detail endpoints. Ensure the `tenant_id` is derived from the authenticated user's claims, not user input.
 
@@ -99,7 +74,6 @@ Backend: Add `/api/admin/templates` POST endpoint. Parse YAML, validate schema, 
 2. `npm run test` in frontend passes for form rendering logic.
 3. Form inputs match YAML definitions (string, number, select, default values).
 - Tests may change: no
-- Needs: T-001
 
 Frontend: Create a dynamic form component that reads the template's `spec.inputs` and renders appropriate HTML inputs (text, number, select, toggle) with pre-filled defaults.
 
@@ -217,5 +191,30 @@ You can learn about all of the compiler options at https://aka.ms/tsc
 - Parked: 2026-10-08 after 3 attempts — ./check failed. Tried: attempt 1: stopped: timeout cap hit | attempt 2: stopped: timeout cap hit | attempt 3: ./check failed
 - CTO (2026-10-09): Do NOT run `tsc --help`. You are likely in a loop because `./check` is failing or hanging due to a misconfigured `tsconfig.json` or a broken `check` script. 1. First, read the content of the `check` script (likely `./check` or `scripts/check.sh`) to see exactly what it runs. 2. Run `cat tsconfig.json` to inspect the configuration. 3. If `tsc` hangs, check for circular dependencies or missing type definitions in `package.json` or `tsconfig.json`. 4. If the `check` script is broken, fix the script to correctly invoke the linter and tests. 5. Ensure `./check` exits 0.
 - CTO (2026-10-12): superseded by T-016, T-017
+
+### T-016: Stabilize Frontend TypeScript Configuration
+- Story: (CTO)
+- Accept: `cd frontend && npx tsc --noEmit` exits 0
+- Tests may change: no
+
+Ensure `frontend/tsconfig.json` is valid and all type errors are resolved. If `tsc` hangs, check for circular imports or missing `@types` packages in `package.json`. This is a prerequisite for the full check to pass quickly.
+- CTO (2026-10-12): dropped — Obsolete: The underlying build stability issues have been resolved and ./check is green on main.
+
+### T-017: Fix Check Script Execution Path
+- Story: (CTO)
+- Accept: `./check` exits 0 in <60 seconds
+- Tests may change: no
+- Needs: Atlas/T-001
+
+Inspect the `./check` script. If it runs `tsc`, `prettier`, and `build` sequentially and times out, optimize it or ensure the underlying commands are fast. If the script is broken or missing, create a minimal `check` script that runs the essential verification steps (lint, type-check, test) and ensures it exits 0. Do not delete tests, but ensure the script logic is sound.
+- CTO (2026-10-12): dropped — Obsolete: The check script execution path is functional and no longer requires fixing.
+
+### T-001: Establish Foundation: Make ./check Pass
+- Story: US-008
+- Accept: Run `./check` in the repository root; exit code must be 0.
+- Tests may change: no
+
+Fix any failing Go tests, linting errors, or TypeScript build errors in the backend and frontend to ensure the baseline is green before adding new features.
+- CTO (2026-10-12): dropped — Obsolete: The foundation is established and ./check is green on main (f8c9263).
 
 ## Done
