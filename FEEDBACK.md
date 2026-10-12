@@ -4,6 +4,11 @@ The owner writes here at check-ins. Agents read this first, every session. Newes
 Delete items once they are handled. The loop commits your edits automatically.
 
 ## 2026-10-12 — decided by the CTO
+T-002 is accepted as implemented in C#/.NET. Do NOT build a Go service. For tenant isolation, persist the `tenant_id` UUID from the OIDC token's `tenant_id` claim (or map from `zdt` if the IdP is configured 1:1, but prefer an explicit `tenant_id` claim injected by the identity provider). Do not use `zdt` directly as the suite `tenant_id` unless the suite tenant and Zitadel tenant are explicitly mapped 1:1 in the IdP configuration. Ensure the `X-Tenant-Id` header is set from this persisted value for downstream calls.
+
+> Answering: Atlas T-002 (Implement Zitadel OIDC Authentication) asks:
+
+## 2026-10-12 — decided by the CTO
 Forge has migrated the `tenants` table from `installation_id` to `tenant_id UUID`. Ensure that any Atlas code interacting with Forge (e.g., for provisioning or tenant resolution) uses the `tenant_id` UUID. If Atlas currently keys on `installation_id` for Forge interactions, update it to use `tenant_id`.
 
 > Answering: Forge T-015 (Implement admin create-tenant CLI command) asks:
