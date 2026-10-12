@@ -5,15 +5,6 @@ to **Parked** or **Done** itself — keep the `### T-NNN: Title` headings and fi
 
 ## Todo
 
-### T-002: Implement Zitadel OIDC Authentication
-- Story: US-008
-- Accept: 1. `go test ./internal/auth/...` passes.
-2. `npm run build` in frontend passes.
-3. Mock Zitadel token validation returns 200 for valid JWT, 401 for invalid.
-- Tests may change: no
-
-Backend: Add JWT validation middleware for Zitadel tokens, extract user/tenant claims. Frontend: Configure NextAuth v5 with Zitadel provider, set up session handling and middleware for protected routes.
-
 ### T-003: Implement Session Expiration and Logout
 - Story: US-009
 - Accept: 1. `go test ./internal/auth/... -run TestSessionExpiry` passes.
@@ -218,3 +209,13 @@ Fix any failing Go tests, linting errors, or TypeScript build errors in the back
 - CTO (2026-10-12): dropped — Obsolete: The foundation is established and ./check is green on main (f8c9263).
 
 ## Done
+
+### T-002: Implement Zitadel OIDC Authentication
+- Story: US-008
+- Accept: 1. `go test ./internal/auth/...` passes.
+2. `npm run build` in frontend passes.
+3. Mock Zitadel token validation returns 200 for valid JWT, 401 for invalid.
+- Tests may change: no
+
+Backend: Add JWT validation middleware for Zitadel tokens, extract user/tenant claims. Frontend: Configure NextAuth v5 with Zitadel provider, set up session handling and middleware for protected routes.
+- Done: 2026-10-12 in a5c4b57 (attempt 1)
