@@ -5,62 +5,20 @@ to **Parked** or **Done** itself — keep the `### T-NNN: Title` headings and fi
 
 ## Todo
 
-### T-000: Make ./check pass on main
-- Story: (infrastructure)
-- Accept: `./check` exits 0
-- Tests may change: yes
+### T-016: Stabilize Frontend TypeScript Configuration
+- Story: (CTO)
+- Accept: `cd frontend && npx tsc --noEmit` exits 0
+- Tests may change: no
 
-Fix the code (preferred) or the check script so every step passes. Do not
-delete tests to get green; if a test is genuinely obsolete, explain it in summary.md.
-Last output:
-```
-1.weakref/esnext.weakref, es2021.intl, es2022.array, es2022.error, es2022.intl, es2022.object, es2022.sharedmemory, es2022.string, es2022.regexp, es2023.array, es2023.collection, es2023.intl, esnext.array, esnext.collection, esnext.intl, esnext.disposable, esnext.string, esnext.promise, esnext.decorators, esnext.object, esnext.regexp, esnext.iterator, decorators, decorators.legacy
-default: undefined
+Ensure `frontend/tsconfig.json` is valid and all type errors are resolved. If `tsc` hangs, check for circular imports or missing `@types` packages in `package.json`. This is a prerequisite for the full check to pass quickly.
 
---allowJs
-Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files.
-type: boolean
-default: false
+### T-017: Fix Check Script Execution Path
+- Story: (CTO)
+- Accept: `./check` exits 0 in <60 seconds
+- Tests may change: no
+- Needs: Atlas/T-001
 
---checkJs
-Enable error reporting in type-checked JavaScript files.
-type: boolean
-default: false
-
---jsx
-Specify what JSX code is generated.
-one of: preserve, react, react-native, react-jsx, react-jsxdev
-default: undefined
-
---outFile
-Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output.
-
---outDir
-Specify an output folder for all emitted files.
-
---removeComments
-Disable emitting comments.
-type: boolean
-default: false
-
---strict
-Enable all strict type-checking options.
-type: boolean
-default: false
-
---types
-Specify type package names to be included without being referenced in a source file.
-
---esModuleInterop
-Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility.
-type: boolean
-default: false
-
-You can learn about all of the compiler options at https://aka.ms/tsc
-
-```
-- Parked: 2026-10-08 after 3 attempts — ./check failed. Tried: attempt 1: stopped: timeout cap hit | attempt 2: stopped: timeout cap hit | attempt 3: ./check failed
-- CTO (2026-10-09): Do NOT run `tsc --help`. You are likely in a loop because `./check` is failing or hanging due to a misconfigured `tsconfig.json` or a broken `check` script. 1. First, read the content of the `check` script (likely `./check` or `scripts/check.sh`) to see exactly what it runs. 2. Run `cat tsconfig.json` to inspect the configuration. 3. If `tsc` hangs, check for circular dependencies or missing type definitions in `package.json` or `tsconfig.json`. 4. If the `check` script is broken, fix the script to correctly invoke the linter and tests. 5. Ensure `./check` exits 0.
+Inspect the `./check` script. If it runs `tsc`, `prettier`, and `build` sequentially and times out, optimize it or ensure the underlying commands are fast. If the script is broken or missing, create a minimal `check` script that runs the essential verification steps (lint, type-check, test) and ensures it exits 0. Do not delete tests, but ensure the script logic is sound.
 
 ### T-001: Establish Foundation: Make ./check Pass
 - Story: US-008
@@ -75,7 +33,7 @@ Fix any failing Go tests, linting errors, or TypeScript build errors in the back
 2. `npm run build` in frontend passes.
 3. Mock Zitadel token validation returns 200 for valid JWT, 401 for invalid.
 - Tests may change: no
-- Needs: T-000
+- Needs: T-017
 
 Backend: Add JWT validation middleware for Zitadel tokens, extract user/tenant claims. Frontend: Configure NextAuth v5 with Zitadel provider, set up session handling and middleware for protected routes.
 
@@ -201,5 +159,63 @@ Backend: Subscribe to NATS 'quill.pr' subject. Handle 'pr.merged' and 'pr.opened
 Backend: Subscribe to NATS 'tempo.ticket' subject. Handle 'ticket.closed' and 'ticket.created' events by updating the linked service's ticket counts and lists in the database.
 
 ## Parked
+
+### T-000: Make ./check pass on main
+- Story: (infrastructure)
+- Accept: `./check` exits 0
+- Tests may change: yes
+
+Fix the code (preferred) or the check script so every step passes. Do not
+delete tests to get green; if a test is genuinely obsolete, explain it in summary.md.
+Last output:
+```
+1.weakref/esnext.weakref, es2021.intl, es2022.array, es2022.error, es2022.intl, es2022.object, es2022.sharedmemory, es2022.string, es2022.regexp, es2023.array, es2023.collection, es2023.intl, esnext.array, esnext.collection, esnext.intl, esnext.disposable, esnext.string, esnext.promise, esnext.decorators, esnext.object, esnext.regexp, esnext.iterator, decorators, decorators.legacy
+default: undefined
+
+--allowJs
+Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files.
+type: boolean
+default: false
+
+--checkJs
+Enable error reporting in type-checked JavaScript files.
+type: boolean
+default: false
+
+--jsx
+Specify what JSX code is generated.
+one of: preserve, react, react-native, react-jsx, react-jsxdev
+default: undefined
+
+--outFile
+Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output.
+
+--outDir
+Specify an output folder for all emitted files.
+
+--removeComments
+Disable emitting comments.
+type: boolean
+default: false
+
+--strict
+Enable all strict type-checking options.
+type: boolean
+default: false
+
+--types
+Specify type package names to be included without being referenced in a source file.
+
+--esModuleInterop
+Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility.
+type: boolean
+default: false
+
+You can learn about all of the compiler options at https://aka.ms/tsc
+
+```
+- Parked: 2026-10-08 after 3 attempts — ./check failed. Tried: attempt 1: stopped: timeout cap hit | attempt 2: stopped: timeout cap hit | attempt 3: ./check failed
+- CTO (2026-10-09): Do NOT run `tsc --help`. You are likely in a loop because `./check` is failing or hanging due to a misconfigured `tsconfig.json` or a broken `check` script. 1. First, read the content of the `check` script (likely `./check` or `scripts/check.sh`) to see exactly what it runs. 2. Run `cat tsconfig.json` to inspect the configuration. 3. If `tsc` hangs, check for circular dependencies or missing type definitions in `package.json` or `tsconfig.json`. 4. If the `check` script is broken, fix the script to correctly invoke the linter and tests. 5. Ensure `./check` exits 0.
+- CTO (2026-10-12): superseded by T-016, T-017
 
 ## Done
