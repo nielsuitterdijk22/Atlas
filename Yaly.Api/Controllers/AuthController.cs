@@ -12,12 +12,14 @@ namespace Yaly.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly YalyDbContext _db;
+    private readonly ISessionService _sessions;
     private readonly string _frontendUrl;
     private readonly string _defaultChallengeScheme;
 
-    public AuthController(YalyDbContext db, IConfiguration config)
+    public AuthController(YalyDbContext db, ISessionService sessions, IConfiguration config)
     {
         _db = db;
+        _sessions = sessions;
         _frontendUrl = config["Frontend:Url"] ?? "http://localhost:5173";
         var zitadelConfigured = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ZITADEL_AUTHORITY"))
             && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ZITADEL_CLIENT_ID"));
@@ -41,9 +43,19 @@ public class AuthController : ControllerBase
         return Challenge(new AuthenticationProperties { RedirectUri = target }, scheme);
     }
 
+    /// <summary>
+    /// Signs the user out: clears the session cookie AND invalidates the
+    /// server-side session record, so the session cannot outlive the logout.
+    /// </summary>
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
+        var claim = User.FindFirst(YalyClaims.UserId)?.Value;
+        if (claim != null && Guid.TryParse(claim, out var userId))
+        {
+            await _sessions.InvalidateAsync(userId);
+        }
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return NoContent();
     }
@@ -58,6 +70,8 @@ public class AuthController : ControllerBase
 
         var user = await _db.Users.FindAsync(userId);
         if (user == null) return Unauthorized();
+
+        var session = await _sessions.TouchAsync(userId);
 
         var memberships = await (
             from m in _db.Memberships
@@ -79,6 +93,11 @@ public class AuthController : ControllerBase
                 avatarUrl = user.AvatarUrl,
             },
             memberships,
+            session = new
+            {
+                id = session.Id,
+                expiresInSeconds = session.ExpiresInSeconds,
+            },
         });
     }
 }

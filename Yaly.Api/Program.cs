@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ builder.Services.AddSingleton<GitHubService>();
 builder.Services.AddScoped<ProvisioningService>();
 builder.Services.AddScoped<CatalogSyncService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<ISessionService, SessionService>();
 
 var frontendUrl = builder.Configuration["Frontend:Url"] ?? "http://localhost:5173";
 var zitadelAuthority = Environment.GetEnvironmentVariable("ZITADEL_AUTHORITY") ?? "";
@@ -141,6 +143,31 @@ using (var scope = app.Services.CreateScope())
 
 app.UseCors();
 app.UseAuthentication();
+
+// Session lifetime: every authenticated request refreshes the user's
+// last-activity timestamp; an inactive (or invalidated) session is signed
+// out so the cookie stops working. Must run after UseAuthentication and
+// before authorization so expired sessions get a 401, not a redirect.
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true
+        && context.User.FindFirst(YalyClaims.UserId) is { Value.Length: > 0 } claim
+        && Guid.TryParse(claim.Value, out var userId))
+    {
+        var sessions = context.RequestServices.GetRequiredService<ISessionService>();
+        var session = await sessions.TouchAsync(userId);
+        if (session.IsExpired)
+        {
+            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Result = new UnauthorizedResult();
+            return;
+        }
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 app.MapControllers();
 

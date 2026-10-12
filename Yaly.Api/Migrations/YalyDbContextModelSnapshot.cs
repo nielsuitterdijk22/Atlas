@@ -389,6 +389,34 @@ namespace Yaly.Api.Migrations
                     b.ToTable("Services");
                 });
 
+            modelBuilder.Entity("Yaly.Api.Data.Entities.Session", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("InvalidatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("LastActivityAt");
+
+                    b.ToTable("Sessions");
+                });
+
             modelBuilder.Entity("Yaly.Api.Data.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")

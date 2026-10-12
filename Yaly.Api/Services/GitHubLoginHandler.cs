@@ -59,5 +59,10 @@ public static class GitHubLoginHandler
         await db.SaveChangesAsync();
 
         ctx.Identity?.AddClaim(new Claim(YalyClaims.UserId, user.Id.ToString()));
+
+        // Start (or refresh) the server-side session so the inactivity clock
+        // runs from the moment of sign-in.
+        var sessions = ctx.HttpContext.RequestServices.GetRequiredService<ISessionService>();
+        await sessions.TouchAsync(user.Id);
     }
 }
