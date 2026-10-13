@@ -45,3 +45,30 @@ attempt 3: ./check failed. Agent summary: ''
 - Add a docker-compose service for a local Zitadel (or Keycloak in OIDC mode) so the SSO flow can be demoed end-to-end in the sandbox.
 - US-009: session inactivity timeout (30 min) — currently the cookie is a 7-day sliding session; tighten `ExpireTimeSpan`/`SlidingExpiration` once SSO is the only login path.
 - Consider renaming `Membership.GitHubLogin` → `LoginHandle` in a later task (kept as-is this round to limit diff).
+
+## 2026-10-13 03:41 — T-003: Implement Session Expiration and Logout — merged aa92413 (attempt 3)
+### Backend (`Yaly.Api`)
+- `Data/Entities/Session.cs`: new `Session` entity (Id, UserId, CreatedAt, LastActivityAt, InvalidatedAt?) — one row per user.
+- `Data/YalyDbContext.cs`: `DbSet<Session>` + unique index on UserId, index on LastActivityAt.
+- `Migrations/20261012000001_Sessions.cs` (+ Designer + snapshot): creates the `Sessions` table.
+- `Services/SessionService.cs` (scoped, `ISessionService`):
+  - `TouchAsync(userId)`: upserts the session row, refreshes `LastActivityAt`; returns `SessionInfo` with `IsExpired` (inactivity > timeout, or invalidated) and `ExpiresInSeconds`. An invalidated session is never resurrected by a touch.
+  - `InvalidateAsync(userId)`: sets `InvalidatedAt` (logout / kill switch).
+  - Timeout: `Session:InactivityTimeoutMinutes` / `SESSION_INACTIVITY_TIMEOUT_MINUTES`, default 30 (US-009).
+- `Program.cs`: registers `ISessionService`; adds middleware after `UseAuthentication` — every authenticated request touches the session; expired/invalidated → `SignOutAsync` + 401. Cookie `ExpireTimeSpan` reduced 7d → 24h (the inactivity timeout is the real lifetime).
+- `Controllers/AuthController.cs`: `POST /api/auth/logout` now invalidates the server-side session before signing out; `GET /api/auth/me` returns `session: { id, expiresInSeconds }`.
+- `Services/ZitadelLoginHandler.cs` / `GitHubLoginHandler.cs`: call `TouchAsync` on the login callback so a fresh session row exists.
+### Frontend (`frontend/`)
+- `src/context/AuthContext.jsx`: reads `session.expiresInSeconds` from `/api/auth/me`, arms an inactivity countdown (reset on mousemove/mousedown/keydown/scroll/touchstart), auto-`signOut` on expiry. `signOut` POSTs `/api/auth/logout`, clears `yaly.activeOrg` + user state, redirects to `/` (login).
+- `src/components/Sidebar.jsx`: sign-out button (already present) wired to `signOut` — the user-visible logout.
+- Test infra: vitest 3.2.4 + jsdom + @testing-library (react/dom/jest-dom) devDependencies; `vite.config.js` `test` block; `src/test/setup.js`; `"test": "vitest run"` script.
+- `src/context/__tests__/AuthContext.test.jsx`: 5 tests — loads user + expiry from `/me`; sign-out calls backend, clears local state, redirects; sign-out redirects even when the backend call fails; inactivity timeout triggers auto-logout; activity resets the clock. All pass.
+### Verification
+- `./check` exits 0: frontend test (5/5) + build green; `Yaly.Api` is skipped by `./check` ("no .NET toolchain in the sandbox").
+- `DECISIONS.md`: three entries (server-side session row + middleware, client-side inactivity timer, vitest infra).
+- Tokens: 94,625 in (+3,696,864 cached) / 21,459 out, 38 min, 113 steps
+- Questions for owner: 1. The task's acceptance criterion `go test ./internal/auth/... -run TestSessionExpiry` does not match this repo — the backend is C#/.NET (`Yaly.Api`), there is no Go module anywhere (same mismatch as T-002; the CTO confirmed C#/.NET in FEEDBACK). The equivalent C# coverage is the frontend vitest suite plus the middleware/service code, which `./check` cannot compile in this sandbox (no .NET toolchain). Should the task template's acceptance be updated, or is a C# xUnit project expected?
+2. The sandbox has no .NET toolchain, so the new migration/service/middleware could not be compiled or run here. The code follows the exact patterns of the existing `ZitadelAuth` migration and `ProvisioningService` DI registration, but it has not been build-verified.
+- Follow-ups noticed: - When a .NET toolchain is available: `dotnet build` + `dotnet ef migrations` sanity check, and an integration test hitting `/api/auth/me` + `/api/auth/logout` against a real database.
+- Consider a "session expiring soon" warning (e.g. at 60s remaining) in the UI — not required by US-009, but the `sessionExpiresInSeconds` value is already exposed to components.
+- `Sessions` rows for users who never log in again accumulate; a periodic cleanup of old `InvalidatedAt`/inactive rows could be added later.

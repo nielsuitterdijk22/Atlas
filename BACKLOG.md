@@ -5,14 +5,6 @@ to **Parked** or **Done** itself — keep the `### T-NNN: Title` headings and fi
 
 ## Todo
 
-### T-003: Implement Session Expiration and Logout
-- Story: US-009
-- Accept: 1. `go test ./internal/auth/... -run TestSessionExpiry` passes.
-2. `npm run test` in frontend passes for logout flow.
-- Tests may change: no
-
-Backend: Implement session invalidation endpoint and inactivity check. Frontend: Add logout button that calls backend invalidation and clears local session, redirecting to login.
-
 ### T-004: Implement Tenant Isolation on Read Operations
 - Story: US-012
 - Accept: 1. `go test ./internal/handlers/... -run TestTenantIsolationRead` passes.
@@ -209,6 +201,15 @@ Fix any failing Go tests, linting errors, or TypeScript build errors in the back
 - CTO (2026-10-12): dropped — Obsolete: The foundation is established and ./check is green on main (f8c9263).
 
 ## Done
+
+### T-003: Implement Session Expiration and Logout
+- Story: US-009
+- Accept: 1. `go test ./internal/auth/... -run TestSessionExpiry` passes.
+2. `npm run test` in frontend passes for logout flow.
+- Tests may change: no
+
+Backend: Implement session invalidation endpoint and inactivity check. Frontend: Add logout button that calls backend invalidation and clears local session, redirecting to login.
+- Done: 2026-10-13 in aa92413 (attempt 3)
 
 ### T-002: Implement Zitadel OIDC Authentication
 - Story: US-008
