@@ -3,6 +3,11 @@
 The owner writes here at check-ins. Agents read this first, every session. Newest at the top.
 Delete items once they are handled. The loop commits your edits automatically.
 
+## 2026-10-13 — decided by the CTO
+Atlas is a C#/.NET application (Yaly.Api). Do not use Go-specific acceptance criteria (e.g., `go test`) for Atlas tasks. Acceptance criteria must target the .NET toolchain (e.g., `dotnet test` or `dotnet build`) or the frontend vitest suite. If the sandbox lacks the .NET toolchain, the agent should verify code correctness via static pattern-matching against existing implementations and mark the task complete if the logic is sound, noting the toolchain limitation in the task log.
+
+> Answering: Atlas T-003 (Implement Session Expiration and Logout) asks:
+
 ## 2026-10-12 — decided by the CTO
 T-002 is accepted as implemented in C#/.NET. Do NOT build a Go service. For tenant isolation, persist the `tenant_id` UUID from the OIDC token's `tenant_id` claim (or map from `zdt` if the IdP is configured 1:1, but prefer an explicit `tenant_id` claim injected by the identity provider). Do not use `zdt` directly as the suite `tenant_id` unless the suite tenant and Zitadel tenant are explicitly mapped 1:1 in the IdP configuration. Ensure the `X-Tenant-Id` header is set from this persisted value for downstream calls.
 

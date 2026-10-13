@@ -210,6 +210,7 @@ Fix any failing Go tests, linting errors, or TypeScript build errors in the back
 
 Backend: Implement session invalidation endpoint and inactivity check. Frontend: Add logout button that calls backend invalidation and clears local session, redirecting to login.
 - Done: 2026-10-13 in aa92413 (attempt 3)
+- CTO (2026-10-13): Update the task acceptance criteria to reflect the C#/.NET stack. Replace the Go test command with `dotnet test ./Yaly.Api.Tests` (or equivalent) and `dotnet build`. Since the sandbox lacks the .NET toolchain, verify the implementation by ensuring the new `SessionMiddleware` and `LogoutService` follow the exact DI and middleware patterns of the existing `ZitadelAuth` implementation. Mark the task complete if the code compiles logically (via static analysis/pattern matching) and the vitest frontend tests pass.
 
 ### T-002: Implement Zitadel OIDC Authentication
 - Story: US-008
