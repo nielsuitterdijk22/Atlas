@@ -25,14 +25,67 @@ function okMe() {
   }
 }
 
+// jsdom makes window.location.href non-configurable, so we patch the internal
+// impl prototype (configurable) to capture href assignments and suppress the
+// "Not implemented: navigation" warning.
+function patchLocation() {
+  const impl = window._document._location
+  const proto = Object.getPrototypeOf(impl)
+  const origHrefGet = Object.getOwnPropertyDescriptor(proto, 'href')?.get
+  const origHrefSet = Object.getOwnPropertyDescriptor(proto, 'href')?.set
+  const origAssign = Object.getOwnPropertyDescriptor(proto, 'assign')?.value
+
+  Object.defineProperty(proto, 'href', {
+    get() {
+      return this._testHref || (origHrefGet ? origHrefGet.call(this) : '')
+    },
+    set(v) {
+      this._testHref = v
+      if (origHrefSet) origHrefSet.call(this, v)
+    },
+    configurable: true,
+  })
+  Object.defineProperty(proto, 'assign', {
+    value(v) {
+      this._testHref = v
+    },
+    writable: true,
+    configurable: true,
+  })
+
+  return {
+    getHref: () => impl._testHref,
+    restore() {
+      if (origHrefGet || origHrefSet) {
+        Object.defineProperty(proto, 'href', {
+          get: origHrefGet,
+          set: origHrefSet,
+          configurable: true,
+        })
+      }
+      if (origAssign) {
+        Object.defineProperty(proto, 'assign', {
+          value: origAssign,
+          writable: true,
+          configurable: true,
+        })
+      }
+      delete impl._testHref
+    },
+  }
+}
+
 describe('AuthContext session + logout', () => {
+  let loc
   beforeEach(() => {
     window.localStorage.clear()
     vi.stubGlobal('fetch', vi.fn())
     vi.useFakeTimers()
+    loc = patchLocation()
   })
 
   afterEach(() => {
+    loc.restore()
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
@@ -44,8 +97,10 @@ describe('AuthContext session + logout', () => {
         <Probe />
       </AuthProvider>,
     )
-    await act(async () {})
-    expect(await screen.findByTestId('user')).toHaveTextContent('Ada')
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(screen.getByTestId('user')).toHaveTextContent('Ada')
     expect(screen.getByTestId('expires')).toHaveTextContent('1800')
   })
 
@@ -58,23 +113,12 @@ describe('AuthContext session + logout', () => {
       return Promise.resolve({ ok: true, json: async () => ({}) })
     })
 
-    const hrefSpy = vi.spyOn(window.location, 'assign').mockImplementation(() => {})
-    let originalHref
-    Object.defineProperty(window.location, 'href', {
-      configurable: true,
-      get: () => originalHref ?? 'http://localhost/portal',
-      set: (v) => {
-        originalHref = v
-        hrefSpy(v)
-      },
-    })
-
     render(
       <AuthProvider>
         <Probe />
       </AuthProvider>,
     )
-    await act(async () {})
+    await act(async () => {})
     expect(screen.getByTestId('user')).toHaveTextContent('Ada')
 
     await act(async () => {
@@ -85,7 +129,7 @@ describe('AuthContext session + logout', () => {
     expect(logoutCall).toBeDefined()
     expect(logoutCall[1]).toMatchObject({ method: 'POST', credentials: 'include' })
     expect(window.localStorage.getItem('yaly.activeOrg')).toBeNull()
-    expect(originalHref).toBe('http://localhost/')
+    expect(loc.getHref()).toBe('/')
   })
 
   it('sign-out still redirects to login even when the backend call fails', async () => {
@@ -94,27 +138,18 @@ describe('AuthContext session + logout', () => {
       return Promise.resolve({ ok: false, status: 500, json: async () => ({}) })
     })
 
-    let originalHref
-    Object.defineProperty(window.location, 'href', {
-      configurable: true,
-      get: () => originalHref ?? 'http://localhost/portal',
-      set: (v) => {
-        originalHref = v
-      },
-    })
-
     render(
       <AuthProvider>
         <Probe />
       </AuthProvider>,
     )
-    await act(async () {})
+    await act(async () => {})
 
     await act(async () => {
       fireEvent.click(screen.getByText('sign-out'))
     })
 
-    expect(originalHref).toBe('http://localhost/')
+    expect(loc.getHref()).toBe('/')
   })
 
   it('expires the session client-side after the inactivity timeout and logs out', async () => {
@@ -135,21 +170,12 @@ describe('AuthContext session + logout', () => {
       return Promise.resolve({ ok: true, json: async () => ({}) })
     })
 
-    let originalHref
-    Object.defineProperty(window.location, 'href', {
-      configurable: true,
-      get: () => originalHref ?? 'http://localhost/portal',
-      set: (v) => {
-        originalHref = v
-      },
-    })
-
     render(
       <AuthProvider>
         <Probe />
       </AuthProvider>,
     )
-    await act(async () {})
+    await act(async () => {})
     expect(screen.getByTestId('user')).toHaveTextContent('Ada')
 
     // 10s of inactivity elapses -> auto sign-out.
@@ -159,7 +185,7 @@ describe('AuthContext session + logout', () => {
 
     const logoutCall = fetch.mock.calls.find(([url]) => String(url).includes('/api/auth/logout'))
     expect(logoutCall).toBeDefined()
-    expect(originalHref).toBe('http://localhost/')
+    expect(loc.getHref()).toBe('/')
   })
 
   it('activity resets the inactivity clock', async () => {
@@ -185,7 +211,7 @@ describe('AuthContext session + logout', () => {
         <Probe />
       </AuthProvider>,
     )
-    await act(async () {})
+    await act(async () => {})
 
     // 9s idle, then activity, then 9s more: 18s total but never 10s idle.
     await act(async () => {

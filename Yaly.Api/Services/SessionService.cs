@@ -53,6 +53,19 @@ public class SessionService : ISessionService
     {
         var now = DateTime.UtcNow;
         var session = await _db.Sessions.FirstOrDefaultAsync(s => s.UserId == userId);
+
+        // An invalidated session must never be resurrected by a touch.
+        if (session?.InvalidatedAt != null)
+        {
+            return new SessionInfo
+            {
+                Id = session.Id,
+                LastActivityAt = session.LastActivityAt,
+                IsExpired = true,
+                ExpiresInSeconds = null,
+            };
+        }
+
         if (session == null)
         {
             session = new Session { UserId = userId, CreatedAt = now, LastActivityAt = now };
@@ -65,8 +78,7 @@ public class SessionService : ISessionService
 
         await _db.SaveChangesAsync();
 
-        var isExpired = session.InvalidatedAt != null
-            || now - session.LastActivityAt > _timeout;
+        var isExpired = now - session.LastActivityAt > _timeout;
         var remaining = isExpired ? null : (int)Math.Max(0, (_timeout - (now - session.LastActivityAt)).TotalSeconds);
 
         return new SessionInfo
