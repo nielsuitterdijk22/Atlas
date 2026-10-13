@@ -5,13 +5,6 @@ to **Parked** or **Done** itself — keep the `### T-NNN: Title` headings and fi
 
 ## Todo
 
-### T-018: Verify and fix tenant isolation in ServicesController.Get
-- Story: (CTO)
-- Accept: dotnet test --filter TestTenantIsolationRead passes; integration test confirms cross-tenant Get returns 404
-- Tests may change: no
-
-Modify `Yaly.Api/Controllers/ServicesController.cs`. In the `Get` action, ensure the query includes `.Where(s => s.Id == id && s.OrgId == acc.OrgId)`. If the service is not found or belongs to a different org, return `NotFound()`. Update `Yaly.Api.Tests/ServicesControllerTests.cs` to add a test case where a user in Org A requests a service ID belonging to Org B and asserts a 404 response.
-
 ### T-019: Audit and fix tenant isolation in Requests and Admin endpoints
 - Story: (CTO)
 - Accept: dotnet test --filter TestTenantIsolationRead passes; all List/Get actions in RequestsController and AdminController return 404 for cross-tenant IDs
@@ -217,6 +210,14 @@ Backend: Add `tenant_id` filtering to all SQL queries in the service catalog and
 - CTO (2026-10-13): superseded by T-018, T-019
 
 ## Done
+
+### T-018: Verify and fix tenant isolation in ServicesController.Get
+- Story: (CTO)
+- Accept: dotnet test --filter TestTenantIsolationRead passes; integration test confirms cross-tenant Get returns 404
+- Tests may change: no
+
+Modify `Yaly.Api/Controllers/ServicesController.cs`. In the `Get` action, ensure the query includes `.Where(s => s.Id == id && s.OrgId == acc.OrgId)`. If the service is not found or belongs to a different org, return `NotFound()`. Update `Yaly.Api.Tests/ServicesControllerTests.cs` to add a test case where a user in Org A requests a service ID belonging to Org B and asserts a 404 response.
+- Done: 2026-10-13 in 6286d4a (attempt 1)
 
 ### T-003: Implement Session Expiration and Logout
 - Story: US-009

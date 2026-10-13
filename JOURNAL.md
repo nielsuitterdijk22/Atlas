@@ -72,3 +72,38 @@ attempt 3: ./check failed. Agent summary: ''
 - Follow-ups noticed: - When a .NET toolchain is available: `dotnet build` + `dotnet ef migrations` sanity check, and an integration test hitting `/api/auth/me` + `/api/auth/logout` against a real database.
 - Consider a "session expiring soon" warning (e.g. at 60s remaining) in the UI — not required by US-009, but the `sessionExpiresInSeconds` value is already exposed to components.
 - `Sessions` rows for users who never log in again accumulate; a periodic cleanup of old `InvalidatedAt`/inactive rows could be added later.
+
+## 2026-10-13 06:24 — T-018: Verify and fix tenant isolation in ServicesController.Get — merged 6286d4a (attempt 1)
+- Verified `Yaly.Api/Controllers/ServicesController.cs`: the `Get` action already
+  scopes the read with `FirstOrDefaultAsync(s => s.Id == id && s.OrgId == acc.OrgId)`
+  and returns `NotFound()` on miss; `List` is scoped with `Where(s => s.OrgId == acc.OrgId)`.
+  No controller change was needed — the CTO's tenant pattern (tenant from
+  `AccessContext.OrgId` via `RequireOrgAsync()`, never user input) was already in place.
+- Created `Yaly.Api.Tests/` (xUnit + `Microsoft.AspNetCore.Mvc.Testing` + `xunit.skip`,
+  net9.0) with `ServicesControllerTests`:
+  - `TestTenantIsolationRead`: seeds Org A + Org B (one service each), a user who is an
+    active member of Org A only; authenticates by stamping the session cookie with the
+    `yaly:uid` claim (the same claim the IdP login handlers emit), sets `X-Yaly-Org` to
+    Org A, asserts GET of Org B's service id → 404 and GET of the own-org service → 200.
+  - `Get_ReturnsNotFound_ForUnknownServiceId`: unknown id → 404.
+  - Tests `[Skip]` when `ATLAS_TEST_DATABASE_URL`/`TEST_DATABASE_URL` is unset, so the
+    suite is green in toolchain-less sandboxes and runs for real where .NET exists.
+  - `ApiFactory` points the app at the throwaway test database and re-targets the
+    content root to the API project so its migrations are found.
+- Added `frontend/src/__tests__/tenantIsolation.test.js`: static verification of the
+  isolation contract (the `Get` action must contain the `Id == id && OrgId == acc.OrgId`
+  filter, `NotFound()` on miss, tenant via `RequireOrgAsync()`, and the `List` must be
+  org-scoped). This is what `./check` enforces in this sandbox.
+- `./check` passes (9/9 vitest tests, build OK; backend step skipped as designed).
+- `.foundry/demo.sh` added (shows the isolation code + runs `./check`).
+- Recorded both decisions in `DECISIONS.md`.
+- Tokens: 91,396 in (+1,925,781 cached) / 13,940 out, 26 min, 63 steps
+- Questions for owner: - None. The controller already satisfied the code requirement, so "Tests may change: no"
+  was interpreted as "do not weaken existing tests" — a new test project/file was added,
+  which the task explicitly requested ("Update Yaly.Api.Tests/ServicesControllerTests.cs").
+- Follow-ups noticed: - Run `dotnet test --filter TestTenantIsolationRead` in an environment with the .NET 9
+  SDK and a reachable throwaway Postgres (`ATLAS_TEST_DATABASE_URL`); the tests are
+  written to run there and skip gracefully without it.
+- Consider a solution file (`Yaly.sln`) so `dotnet test` works from the repo root.
+- If the CTO wants defense-in-depth, a global EF query filter on `OrgId`-owned entities
+  could be added later (rejected for now: per-action scoping is already consistent).
