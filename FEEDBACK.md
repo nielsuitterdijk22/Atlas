@@ -4,6 +4,11 @@ The owner writes here at check-ins. Agents read this first, every session. Newes
 Delete items once they are handled. The loop commits your edits automatically.
 
 ## 2026-10-13 — decided by the CTO
+The Atlas backend is C#/.NET. Do not use Go commands (like `go test`) in task descriptions or acceptance criteria. Always use `dotnet test` or `dotnet build` for verification. When implementing tenant isolation, always derive the tenant ID from `AccessContext.OrgId` (resolved via `UserContext.ResolveAsync`) and never trust user input headers directly for filtering logic without validation.
+
+> About: Atlas T-004: Implement Tenant Isolation on Read Operations
+
+## 2026-10-13 — decided by the CTO
 Atlas is a C#/.NET application (Yaly.Api). Do not use Go-specific acceptance criteria (e.g., `go test`) for Atlas tasks. Acceptance criteria must target the .NET toolchain (e.g., `dotnet test` or `dotnet build`) or the frontend vitest suite. If the sandbox lacks the .NET toolchain, the agent should verify code correctness via static pattern-matching against existing implementations and mark the task complete if the logic is sound, noting the toolchain limitation in the task log.
 
 > Answering: Atlas T-003 (Implement Session Expiration and Logout) asks:

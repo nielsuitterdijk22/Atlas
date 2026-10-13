@@ -5,20 +5,27 @@ to **Parked** or **Done** itself — keep the `### T-NNN: Title` headings and fi
 
 ## Todo
 
-### T-004: Implement Tenant Isolation on Read Operations
-- Story: US-012
-- Accept: 1. `go test ./internal/handlers/... -run TestTenantIsolationRead` passes.
-2. Query for Tenant A service in Tenant B returns 404.
+### T-018: Verify and fix tenant isolation in ServicesController.Get
+- Story: (CTO)
+- Accept: dotnet test --filter TestTenantIsolationRead passes; integration test confirms cross-tenant Get returns 404
 - Tests may change: no
 
-Backend: Add `tenant_id` filtering to all SQL queries in the service catalog and detail endpoints. Ensure the `tenant_id` is derived from the authenticated user's claims, not user input.
+Modify `Yaly.Api/Controllers/ServicesController.cs`. In the `Get` action, ensure the query includes `.Where(s => s.Id == id && s.OrgId == acc.OrgId)`. If the service is not found or belongs to a different org, return `NotFound()`. Update `Yaly.Api.Tests/ServicesControllerTests.cs` to add a test case where a user in Org A requests a service ID belonging to Org B and asserts a 404 response.
+
+### T-019: Audit and fix tenant isolation in Requests and Admin endpoints
+- Story: (CTO)
+- Accept: dotnet test --filter TestTenantIsolationRead passes; all List/Get actions in RequestsController and AdminController return 404 for cross-tenant IDs
+- Tests may change: no
+- Needs: Atlas/T-004
+
+Modify `Yaly.Api/Controllers/RequestsController.cs` and `Yaly.Api/Controllers/AdminController.cs`. Verify that `List` and `Get` actions filter by `acc.OrgId`. Specifically, in `AdminController.GetExecutions`, ensure the execution query is scoped to the current org. Add tests in `Yaly.Api.Tests` that verify these endpoints return 404 when accessing resources from a different tenant, confirming the isolation boundary is enforced across all read paths.
 
 ### T-005: Implement Tenant Isolation on Write Operations
 - Story: US-013
 - Accept: 1. `go test ./internal/handlers/... -run TestTenantIsolationWrite` passes.
 2. Attempting to update a service in Tenant B while in Tenant A returns 404 and no DB write occurs.
 - Tests may change: no
-- Needs: T-004
+- Needs: T-019
 
 Backend: Ensure all INSERT and UPDATE statements for services and templates include `tenant_id` in the WHERE clause and data payload. Validate that the target resource belongs to the current tenant before writing.
 
@@ -27,7 +34,7 @@ Backend: Ensure all INSERT and UPDATE statements for services and templates incl
 - Accept: 1. `go test ./internal/handlers/... -run TestSearchCatalog` passes.
 2. Searching for 'payment' returns only matching services within 200ms.
 - Tests may change: no
-- Needs: T-004
+- Needs: T-019
 
 Backend: Add `/api/services/search?q=...` endpoint. Use Postgres full-text search or ILIKE for name and tags. Ensure results are filtered by `tenant_id`.
 
@@ -37,7 +44,7 @@ Backend: Add `/api/services/search?q=...` endpoint. Use Postgres full-text searc
 2. `npm run build` in frontend passes.
 3. API returns owner email, linked PRs, and tickets for a service.
 - Tests may change: no
-- Needs: T-004
+- Needs: T-019
 
 Backend: Add `/api/services/{id}` endpoint returning service details, owner info (from Zitadel), and lists of linked PRs and tickets. Frontend: Build service detail page displaying these live links with correct cross-product URLs.
 
@@ -102,7 +109,7 @@ Backend: Add error handling to the provisioning flow. If Quill succeeds but Temp
 - Accept: 1. `go test ./internal/events/... -run TestPRSync` passes.
 2. Upon 'pr.merged' event, service's 'last_pr_status' updates to 'merged' within 5s.
 - Tests may change: no
-- Needs: T-004, Quill/T-013
+- Needs: T-019, Quill/T-013
 
 Backend: Subscribe to NATS 'quill.pr' subject. Handle 'pr.merged' and 'pr.opened' events by updating the linked service's status and PR list in the database. Implement reconnection logic for NATS.
 
@@ -111,7 +118,7 @@ Backend: Subscribe to NATS 'quill.pr' subject. Handle 'pr.merged' and 'pr.opened
 - Accept: 1. `go test ./internal/events/... -run TestTicketSync` passes.
 2. Upon 'ticket.closed' event, service's 'active_ticket_count' decrements by 1.
 - Tests may change: no
-- Needs: T-004, Tempo/T-001
+- Needs: T-019, Tempo/T-001
 
 Backend: Subscribe to NATS 'tempo.ticket' subject. Handle 'ticket.closed' and 'ticket.created' events by updating the linked service's ticket counts and lists in the database.
 
@@ -199,6 +206,15 @@ Inspect the `./check` script. If it runs `tsc`, `prettier`, and `build` sequenti
 
 Fix any failing Go tests, linting errors, or TypeScript build errors in the backend and frontend to ensure the baseline is green before adding new features.
 - CTO (2026-10-12): dropped — Obsolete: The foundation is established and ./check is green on main (f8c9263).
+
+### T-004: Implement Tenant Isolation on Read Operations
+- Story: US-012
+- Accept: 1. `go test ./internal/handlers/... -run TestTenantIsolationRead` passes.
+2. Query for Tenant A service in Tenant B returns 404.
+- Tests may change: no
+
+Backend: Add `tenant_id` filtering to all SQL queries in the service catalog and detail endpoints. Ensure the `tenant_id` is derived from the authenticated user's claims, not user input.
+- CTO (2026-10-13): superseded by T-018, T-019
 
 ## Done
 
